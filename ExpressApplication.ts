@@ -7,9 +7,11 @@ type ControllerMap<T> = Map<string, T>;
 
 export class ExpressApplication {
 	private controllers: ControllerMap<ExpressModule>;
+	private port: number;
 
-	constructor(private app: Express) {
+	constructor(private app: Express, port: number) {
 		this.controllers = new Map();
+		this.port = port;
 	}
 
 	/**
@@ -18,15 +20,10 @@ export class ExpressApplication {
 	 *
 	 * @param controller The controller that handles the specific route
 	 */
-	public addController<T extends ExpressModule>(
-		controller: T
-	) {
-
+	public addController<T extends ExpressModule>(controller: T) {
 		if (this.controllers.get(controller.className)) {
 			throw Error(
-				'Controller ' +
-					controller.className +
-					' is already registered!'
+				'Controller ' + controller.className + ' is already registered!'
 			);
 		}
 
@@ -36,8 +33,7 @@ export class ExpressApplication {
 
 		if (currInstance == undefined) {
 			throw Error(
-				'Something went wrong while registering ' +
-					controller.className
+				'Something went wrong while registering ' + controller.className
 			);
 		}
 
@@ -63,14 +59,8 @@ export class ExpressApplication {
 	 * Starts the express application
 	 */
 	public start() {
-		let port = process.env.PORT;
-
-		if (port == undefined) {
-			throw 'Undefined port number! Please define it in the environment';
-		}
-
-		this.app.listen(process.env.PORT, () => {
-			console.log('Listening on', process.env.PORT);
+		this.app.listen(this.port, () => {
+			console.log('Listening on', this.port);
 		});
 	}
 }
