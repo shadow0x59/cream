@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { ExpressMiddleware } from '../ExpressMiddleware/ExpressMiddleware';
+import { ExpressMiddleware, ExpressMiddlewares } from '../ExpressMiddleware/ExpressMiddleware';
 import { Constructables } from '../Utils/Constructable';
 
 export class ExpressModule {
@@ -7,7 +7,7 @@ export class ExpressModule {
 	public accessor baseUrl: string;
 	public accessor className: string;
 
-	constructor(public middlewareList: Constructables<ExpressMiddleware> = []) {
+	constructor(public middlewareList: ExpressMiddlewares = []) {
 		this.router = Router();
 		this.baseUrl = '/';
 		this.className = '';

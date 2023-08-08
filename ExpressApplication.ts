@@ -1,5 +1,5 @@
 import { Constructable } from './Utils/Constructable';
-import { ExpressModule } from './ExpressAdapter/ExpressModule';
+import { ExpressModule, ExpressModules } from './ExpressAdapter/ExpressModule';
 import { Express } from 'express';
 import { ExpressMiddleware } from './ExpressMiddleware/ExpressMiddleware';
 
@@ -19,32 +19,30 @@ export class ExpressApplication {
 	 * @param controller The controller that handles the specific route
 	 */
 	public addController<T extends ExpressModule>(
-		controller: Constructable<T>
+		controller: T
 	) {
-		let controllerInstance = new controller();
 
-		if (this.controllers.get(controllerInstance.className)) {
+		if (this.controllers.get(controller.className)) {
 			throw Error(
 				'Controller ' +
-					controllerInstance.className +
+					controller.className +
 					' is already registered!'
 			);
 		}
 
 		let currInstance = this.controllers
-			.set(controllerInstance.className, controllerInstance)
-			.get(controllerInstance.className)!;
+			.set(controller.className, controller)
+			.get(controller.className)!;
 
 		if (currInstance == undefined) {
 			throw Error(
 				'Something went wrong while registering ' +
-					controllerInstance.className
+					controller.className
 			);
 		}
 
 		let middlewareList = currInstance.middlewareList.map(
-			(x: Constructable<ExpressMiddleware>) => {
-				let instance = new x();
+			(instance: ExpressMiddleware) => {
 				return instance.handle.bind(instance);
 			}
 		);
@@ -55,16 +53,10 @@ export class ExpressApplication {
 		this.app.use(currInstance.baseUrl, currInstance.router);
 	}
 
-	public addControllers(controllers: Constructable<ExpressModule>[]) {
+	public addControllers(controllers: ExpressModules) {
 		for (let controller of controllers) {
 			this.addController(controller);
 		}
-	}
-
-	public getController<T extends ExpressModule>(
-		controller: Constructable<T>
-	): T | undefined {
-		return this.controllers.get(controller.name) as T;
 	}
 
 	/**

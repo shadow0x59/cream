@@ -93,20 +93,20 @@ export function ExpressCall<T extends ExpressModule>(
 			}
 		};
 
-		let methodRouters: Routes =
-			Reflect.getOwnMetadata(ROUTES_METADATA_KEY, target) || [];
-		let paramAssoc: ParameterProps = Reflect.getOwnMetadata(
+		/*let paramAssoc: ParameterProps = Reflect.getOwnMetadata(
 			PARAMS_METADATA_KEY,
 			target,
 			propertyName
-		);
-		if (paramAssoc) {
-			for (let param of paramAssoc.sort(
-				(a: ParameterProp, b: ParameterProp) => a.index - b.index
-			)) {
-				relativePath += '/:' + param.name;
-			}
-		}
+			);
+			if (paramAssoc) {
+				for (let param of paramAssoc.sort(
+					(a: ParameterProp, b: ParameterProp) => a.index - b.index
+					)) {
+						relativePath += '/:' + param.name;
+					}
+				}*/
+		let methodRouters: Routes =
+			Reflect.getOwnMetadata(ROUTES_METADATA_KEY, target) || [];
 		methodRouters.push(
 			new Route(relativePath, descriptor.value!, httpMethod)
 		);

@@ -1,13 +1,12 @@
 import 'reflect-metadata';
 
 import { Route, Routes, ROUTES_METADATA_KEY } from '../HttpUtils/Route';
-import { Constructable, Constructables } from '../Utils/Constructable';
-import { ExpressMiddleware } from './ExpressMiddleware';
+import { ExpressMiddleware, ExpressMiddlewares } from './ExpressMiddleware';
 import { ExpressModule } from '../ExpressAdapter/ExpressModule';
 
 export function UseMiddlewaresForController<
 	T extends { new (...args: any[]): ExpressModule }
->(middlewares: Constructables<ExpressMiddleware>) {
+>(middlewares: ExpressMiddlewares) {
 	return function (target: T): T {
 		return class extends target {
 			constructor(...args: any[]) {
@@ -22,7 +21,7 @@ export function UseMiddlewaresForController<
 }
 
 export function UseMiddleware<T extends ExpressMiddleware>(
-	middleware: Constructable<T>
+	middleware: T
 ) {
 	return function (
 		target: ExpressModule,
@@ -36,7 +35,7 @@ export function UseMiddleware<T extends ExpressMiddleware>(
 			(value: Route) => value.method == descriptor.value!
 		)!;
 
-		route.addMiddleware(new middleware());
+		route.addMiddleware(middleware);
 
 		Reflect.defineMetadata(ROUTES_METADATA_KEY, methodRouters, target);
 
