@@ -12,6 +12,7 @@ import {
 	MiddlewareDataCollection,
 	MiddlewareDataCollections,
 } from '../ExpressMiddleware/ExpressMiddleware';
+import { RestError } from '../ExpressErrorHandler/ExpressErrorHandler';
 
 const BODY_METADATA_KEY = Symbol('express:bodyAssoc');
 const PARAMS_METADATA_KEY = Symbol('express:paramAssoc');
@@ -102,6 +103,11 @@ export function ExpressCall<T extends ExpressModule>(
 				res.set('Content-Type', result.contentType);
 				res.send(result.content);
 			} catch (e) {
+				if (e instanceof RestError) {
+					res.status((e as RestError).statusCode);
+				} else {
+					res.status(500);
+				}
 				next(e);
 			}
 		};
@@ -248,6 +254,7 @@ export function Header(headerName: string) {
 		Reflect.defineMetadata(
 			HEADERS_METADATA_KEY,
 			existingHeaderMappings,
+			target,
 			propertyKey
 		);
 	};

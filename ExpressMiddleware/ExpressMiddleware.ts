@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
+import { RestError } from '../ExpressErrorHandler/ExpressErrorHandler';
 
 export type MiddlewareDataCollection = {} | undefined;
 
@@ -24,6 +25,11 @@ export abstract class ExpressMiddleware {
 
 			next();
 		} catch (e) {
+			if (e instanceof RestError) {
+				res.status((e as RestError).statusCode);
+			} else {
+				res.status(500);
+			}
 			next(e);
 		}
 	}

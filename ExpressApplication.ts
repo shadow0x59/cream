@@ -1,7 +1,7 @@
-import { Constructable } from './Utils/Constructable';
 import { ExpressModule, ExpressModules } from './ExpressAdapter/ExpressModule';
-import { Express } from 'express';
+import { Express, NextFunction, Request, Response } from 'express';
 import { ExpressMiddleware } from './ExpressMiddleware/ExpressMiddleware';
+import { ExpressErrorHandler } from './ExpressErrorHandler/ExpressErrorHandler';
 
 type ControllerMap<T> = Map<string, T>;
 
@@ -9,16 +9,24 @@ export class ExpressApplication {
 	private controllers: ControllerMap<ExpressModule>;
 	private port: number;
 
-	constructor(private app: Express, port: number) {
+	constructor(
+		private app: Express,
+		port: number,
+		private _errorHandler?: ExpressErrorHandler
+	) {
 		this.controllers = new Map();
 		this.port = port;
 	}
 
+	set errorHandler(v: ExpressErrorHandler) {
+		this._errorHandler = v;
+	}
+
 	/**
-	 * This method adds a controller  that handles a specific URL Zone declared by the ExpressController decorator
-	 * This method automatically creates the instances and injects the necessary dependencies
-	 *
-	 * @param controller The controller that handles the specific route
+	 * This method adds a controller  that handles a specific URL Zone
+	 * declared by the ExpressController decorator
+	 * @param controller An instance of the controller that handles the
+	 * specific route
 	 */
 	public addController<T extends ExpressModule>(controller: T) {
 		if (this.controllers.get(controller.className)) {
@@ -56,9 +64,27 @@ export class ExpressApplication {
 	}
 
 	/**
+	 * This method is an interface to express for handling errors
+	 */
+	public handleErrors(
+		err: Error,
+		req: Request,
+		res: Response,
+		next: NextFunction
+	) {
+		if (this._errorHandler) {
+			this._errorHandler.handle(err, req, res);
+		} else {
+			next(err);
+		}
+	}
+
+	/**
 	 * Starts the express application
 	 */
 	public start() {
+		let boundFn = this.handleErrors.bind(this);
+		this.app.use(boundFn);
 		this.app.listen(this.port, () => {
 			console.log('Listening on', this.port);
 		});
