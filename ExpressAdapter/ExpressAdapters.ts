@@ -15,6 +15,7 @@ import {
 
 const BODY_METADATA_KEY = Symbol('express:bodyAssoc');
 const PARAMS_METADATA_KEY = Symbol('express:paramAssoc');
+const HEADERS_METADATA_KEY = Symbol('express:headersAssoc');
 export const MIDDLEWARE_METADATA_KEY = Symbol('express:middlewareAssoc');
 
 export function ExpressCall<T extends ExpressModule>(
@@ -55,6 +56,18 @@ export function ExpressCall<T extends ExpressModule>(
 			if (paramAssoc) {
 				for (let param of paramAssoc) {
 					arguments[param.index] = (req.params || [])[param.name];
+				}
+			}
+
+			let headerMappings: ParameterProps = Reflect.getOwnMetadata(
+				HEADERS_METADATA_KEY,
+				target,
+				propertyName
+			);
+
+			if (headerMappings) {
+				for (let mapping of headerMappings) {
+					arguments[mapping.index] = req.header(mapping.name);
 				}
 			}
 
@@ -215,6 +228,26 @@ export function UrlParameter(fieldName: string) {
 			PARAMS_METADATA_KEY,
 			existingRequiredParameters,
 			target,
+			propertyKey
+		);
+	};
+}
+
+export function Header(headerName: string) {
+	return function (
+		target: Object,
+		propertyKey: string | symbol,
+		parameterIndex: number
+	) {
+		let existingHeaderMappings: ParameterProps =
+			Reflect.getOwnMetadata(HEADERS_METADATA_KEY, target, propertyKey) ||
+			[];
+		existingHeaderMappings.push(
+			new ParameterProp(parameterIndex, headerName)
+		);
+		Reflect.defineMetadata(
+			HEADERS_METADATA_KEY,
+			existingHeaderMappings,
 			propertyKey
 		);
 	};
