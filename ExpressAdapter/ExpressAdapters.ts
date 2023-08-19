@@ -34,6 +34,7 @@ export function ExpressCall<T extends ExpressModule>(
 			res: Response,
 			next: NextFunction
 		) {
+			let args = [];
 			let bodyAssocs: ParameterProps = Reflect.getOwnMetadata(
 				BODY_METADATA_KEY,
 				target,
@@ -42,9 +43,9 @@ export function ExpressCall<T extends ExpressModule>(
 			if (bodyAssocs) {
 				for (let param of bodyAssocs) {
 					if (param.name == ':body') {
-						arguments[param.index] = req.body;
+						args[param.index] = req.body;
 					} else {
-						arguments[param.index] = (req.body || [])[param.name];
+						args[param.index] = (req.body || [])[param.name];
 					}
 				}
 			}
@@ -56,7 +57,7 @@ export function ExpressCall<T extends ExpressModule>(
 			);
 			if (paramAssoc) {
 				for (let param of paramAssoc) {
-					arguments[param.index] = (req.params || [])[param.name];
+					args[param.index] = (req.params || [])[param.name];
 				}
 			}
 
@@ -68,7 +69,7 @@ export function ExpressCall<T extends ExpressModule>(
 
 			if (headerMappings) {
 				for (let mapping of headerMappings) {
-					arguments[mapping.index] = req.header(mapping.name);
+					args[mapping.index] = req.header(mapping.name);
 				}
 			}
 
@@ -88,17 +89,19 @@ export function ExpressCall<T extends ExpressModule>(
 					);
 
 					if (collection) {
-						arguments[param.index] = (collection as any)[
-							param.name
-						];
+						if (param.name == '$') {
+							args[param.index] = collection;
+						} else {
+							args[param.index] = (collection as any)[param.name];
+						}
 					} else {
-						arguments[param.index] = undefined;
+						args[param.index] = undefined;
 					}
 				}
 			}
 
 			try {
-				let result = (await method.apply(this, arguments)) as Message;
+				let result = (await method.apply(this, args)) as Message;
 				res.status(result.status);
 				res.set('Content-Type', result.contentType);
 				res.send(result.content);
@@ -112,18 +115,6 @@ export function ExpressCall<T extends ExpressModule>(
 			}
 		};
 
-		/*let paramAssoc: ParameterProps = Reflect.getOwnMetadata(
-			PARAMS_METADATA_KEY,
-			target,
-			propertyName
-			);
-			if (paramAssoc) {
-				for (let param of paramAssoc.sort(
-					(a: ParameterProp, b: ParameterProp) => a.index - b.index
-					)) {
-						relativePath += '/:' + param.name;
-					}
-				}*/
 		let methodRouters: Routes =
 			Reflect.getOwnMetadata(ROUTES_METADATA_KEY, target) || [];
 		methodRouters.push(

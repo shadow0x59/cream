@@ -2,12 +2,22 @@ import { ExpressModule, ExpressModules } from './ExpressAdapter/ExpressModule';
 import { Express, NextFunction, Request, Response } from 'express';
 import { ExpressMiddleware } from './ExpressMiddleware/ExpressMiddleware';
 import { ExpressErrorHandler } from './ExpressErrorHandler/ExpressErrorHandler';
+import {
+	ExpressService,
+	ExpressServices,
+} from './ExpressService/ExpressService';
+
+import { Server } from 'http';
+import mongoose from 'mongoose';
 
 type ControllerMap<T> = Map<string, T>;
+type ServiceMap<T> = ControllerMap<T>;
 
 export class ExpressApplication {
 	private controllers: ControllerMap<ExpressModule>;
+	private services: ServiceMap<ExpressService>;
 	private port: number;
+	private server?: Server;
 
 	constructor(
 		private app: Express,
@@ -16,6 +26,7 @@ export class ExpressApplication {
 	) {
 		this.controllers = new Map();
 		this.port = port;
+		this.services = new Map();
 	}
 
 	set errorHandler(v: ExpressErrorHandler) {
@@ -55,11 +66,29 @@ export class ExpressApplication {
 			this.app.use(currInstance.baseUrl, middlewareList);
 		}
 		this.app.use(currInstance.baseUrl, currInstance.router);
+
+		controller.app = this;
 	}
 
 	public addControllers(controllers: ExpressModules) {
 		for (let controller of controllers) {
 			this.addController(controller);
+		}
+	}
+
+	public addService(service: ExpressService) {
+		if (this.services.get(service.id!)) {
+			throw Error('Service ' + service.id! + ' is already registered!');
+		}
+
+		this.services.set(service.id!, service);
+
+		service.app = this;
+	}
+
+	public addServices(services: ExpressServices) {
+		for (let service of services) {
+			this.addService(service);
 		}
 	}
 
@@ -79,14 +108,53 @@ export class ExpressApplication {
 		}
 	}
 
+	public async initServices() {
+		for (let service of this.services) {
+			console.log('Initializing service', service[0], '...');
+			let res = false;
+			try {
+				res = await service[1].init();
+			} catch (e) {
+				console.log(e);
+				res = false;
+			}
+			if (res) {
+				console.log('Service', service[0], 'successfully initialized');
+			} else {
+				console.log('Could not initialize service', service[0]);
+			}
+		}
+	}
+
 	/**
 	 * Starts the express application
 	 */
-	public start() {
+	public async start() {
 		let boundFn = this.handleErrors.bind(this);
 		this.app.use(boundFn);
-		this.app.listen(this.port, () => {
+		await this.initServices();
+		this.server = this.app.listen(this.port, () => {
 			console.log('Listening on', this.port);
 		});
+	}
+
+	public stop(): Promise<void> {
+		return new Promise<void>((resolve, reject) => {
+			this.server!.close(async (err) => {
+				if (err) {
+					reject(err);
+				}
+				await mongoose.connection.close();
+				resolve();
+			});
+		});
+	}
+
+	public getExpressApp(): Express {
+		return this.app;
+	}
+
+	public getService<T>(serviceId: string) {
+		return this.services.get(serviceId) as T;
 	}
 }
