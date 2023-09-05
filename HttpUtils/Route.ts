@@ -8,6 +8,7 @@ export class Route {
 	constructor(
 		public route: string,
 		public method: any,
+		public methodName: string,
 		public httpMethod: HttpMethod,
 		public middlewares: ExpressMiddlewares = []
 	) {}

@@ -20,9 +20,7 @@ export function UseMiddlewaresForController<
 	};
 }
 
-export function UseMiddleware<T extends ExpressMiddleware>(
-	middleware: T
-) {
+export function UseMiddleware<T extends ExpressMiddleware>(middleware: T) {
 	return function (
 		target: ExpressModule,
 		propertyName: string,
@@ -32,7 +30,7 @@ export function UseMiddleware<T extends ExpressMiddleware>(
 			Reflect.getOwnMetadata(ROUTES_METADATA_KEY, target) || [];
 
 		let route: Route = methodRouters.find(
-			(value: Route) => value.method == descriptor.value!
+			(value: Route) => value.methodName == propertyName
 		)!;
 
 		route.addMiddleware(middleware);

@@ -29,7 +29,7 @@ export function ExpressCall<T extends ExpressModule>(
 		descriptor: PropertyDescriptor
 	) {
 		let method = descriptor.value!;
-		descriptor.value = async function (
+		let newMethod = async function (
 			req: ExtendedRequest,
 			res: Response,
 			next: NextFunction
@@ -101,7 +101,7 @@ export function ExpressCall<T extends ExpressModule>(
 			}
 
 			try {
-				let result = (await method.apply(this, args)) as Message;
+				let result = (await method.apply(target, args)) as Message;
 				res.status(result.status);
 				res.set('Content-Type', result.contentType);
 				res.send(result.content);
@@ -118,7 +118,7 @@ export function ExpressCall<T extends ExpressModule>(
 		let methodRouters: Routes =
 			Reflect.getOwnMetadata(ROUTES_METADATA_KEY, target) || [];
 		methodRouters.push(
-			new Route(relativePath, descriptor.value!, httpMethod)
+			new Route(relativePath, newMethod, propertyName, httpMethod)
 		);
 		Reflect.defineMetadata(ROUTES_METADATA_KEY, methodRouters, target);
 
@@ -130,7 +130,7 @@ export function ExpressController<
 	T extends { new (...args: any[]): ExpressModule }
 >(baseRoute: string) {
 	return function (target: T): T {
-		let methodRouters: Routes = Reflect.getOwnMetadata(
+		let routes: Routes = Reflect.getOwnMetadata(
 			ROUTES_METADATA_KEY,
 			target.prototype
 		);
@@ -143,7 +143,7 @@ export function ExpressController<
 					this.className = target.name;
 				}
 
-				for (let route of methodRouters) {
+				for (let route of routes) {
 					this.initRoute(route);
 				}
 				this.baseUrl = baseRoute;
