@@ -6,7 +6,7 @@ export class ExpressModule {
 	public accessor router: Router;
 	public accessor baseUrl: string;
 	public accessor className: string;
-	private _app?: ExpressApplication;
+	private _app!: ExpressApplication;
 
 	constructor(public middlewareList: ExpressMiddlewares = []) {
 		this.router = Router();
@@ -18,7 +18,7 @@ export class ExpressModule {
 		this._app = v;
 	}
 
-	public get app(): ExpressApplication | undefined {
+	public get app(): ExpressApplication {
 		return this._app;
 	}
 }
