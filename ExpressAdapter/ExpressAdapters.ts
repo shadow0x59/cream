@@ -102,8 +102,11 @@ export function ExpressCall<T extends ExpressModule>(
 
 			try {
 				let result = (await method.apply(target, args)) as Message;
-				res.status(result.status);
-				res.set('Content-Type', result.contentType);
+				res.status(result.status || 200);
+				res.set(
+					'Content-Type',
+					result.contentType || 'application/json'
+				);
 				res.send(result.content);
 			} catch (e) {
 				if (e instanceof RestError) {
