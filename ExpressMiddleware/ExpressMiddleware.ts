@@ -9,7 +9,43 @@ export interface ExtendedRequest extends Request {
 	middlewareDataCollections?: MiddlewareDataCollections;
 }
 
-export abstract class ExpressMiddleware {
+export interface BaseMiddleware {
+	handle(
+		req: Request,
+		res: Response,
+		next: NextFunction
+	): void | Promise<void>;
+}
+
+export abstract class AsyncExpressMiddleware<T> implements BaseMiddleware {
+	public abstract behaviour(
+		req: ExtendedRequest,
+		res: Response
+	): Promise<MiddlewareReturnData<T>>;
+
+	async handle(req: ExtendedRequest, res: Response, next: NextFunction) {
+		try {
+			let data: MiddlewareReturnData<T> = await this.behaviour(req, res);
+			let collections: MiddlewareDataCollections =
+				req.middlewareDataCollections || new Map();
+			if (data.content) {
+				collections.set(data.collectionName, data.content);
+			}
+			req.middlewareDataCollections = collections;
+
+			next();
+		} catch (e) {
+			if (e instanceof RestError) {
+				res.status((e as RestError).statusCode);
+			} else {
+				res.status(500);
+			}
+			next(e);
+		}
+	}
+}
+
+export abstract class ExpressMiddleware implements BaseMiddleware {
 	public abstract behaviour(
 		req: ExtendedRequest,
 		res: Response
@@ -35,7 +71,7 @@ export abstract class ExpressMiddleware {
 	}
 }
 
-export type ExpressMiddlewares = ExpressMiddleware[];
+export type BaseMiddlewares = BaseMiddleware[];
 
 export class MiddlewareReturnData<T = {}> {
 	constructor(

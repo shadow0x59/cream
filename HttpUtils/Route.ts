@@ -1,6 +1,6 @@
 import {
-	ExpressMiddlewares,
-	ExpressMiddleware,
+	BaseMiddleware,
+	BaseMiddlewares,
 } from '../ExpressMiddleware/ExpressMiddleware';
 import { HttpMethod } from './HttpMethod';
 
@@ -10,10 +10,10 @@ export class Route {
 		public method: any,
 		public methodName: string,
 		public httpMethod: HttpMethod,
-		public middlewares: ExpressMiddlewares = []
+		public middlewares: BaseMiddlewares = []
 	) {}
 
-	public addMiddleware(middleware: ExpressMiddleware) {
+	public addMiddleware(middleware: BaseMiddleware) {
 		this.middlewares.push(middleware);
 	}
 
