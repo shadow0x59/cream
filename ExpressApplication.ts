@@ -95,7 +95,7 @@ export class ExpressApplication {
 	/**
 	 * This method is an interface to express for handling errors
 	 */
-	public handleErrors(
+	private handleErrors(
 		err: Error,
 		req: Request,
 		res: Response,
@@ -108,7 +108,7 @@ export class ExpressApplication {
 		}
 	}
 
-	public async initServices() {
+	private async initServices() {
 		for (let service of this.services) {
 			console.log('Initializing service', service[0], '...');
 			let res = false;
@@ -154,7 +154,7 @@ export class ExpressApplication {
 		return this.app;
 	}
 
-	public getService<T>(serviceId: string) {
+	public getService<T extends ExpressService>(serviceId: string) {
 		return this.services.get(serviceId) as T;
 	}
 }

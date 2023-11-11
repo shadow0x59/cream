@@ -2,7 +2,7 @@ import { ExpressApplication } from '../ExpressApplication';
 
 export abstract class ExpressService {
 	private _app!: ExpressApplication;
-	protected _id!: string;
+	private _id!: string;
 
 	abstract init(): Promise<boolean>;
 
