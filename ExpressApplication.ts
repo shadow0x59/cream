@@ -1,6 +1,6 @@
 import { ExpressModule, ExpressModules } from './ExpressAdapter/ExpressModule';
 import { Express, NextFunction, Request, Response } from 'express';
-import { ExpressMiddleware } from './ExpressMiddleware/ExpressMiddleware';
+import { BaseMiddleware } from './ExpressMiddleware/ExpressMiddleware';
 import { ExpressErrorHandler } from './ExpressErrorHandler/ExpressErrorHandler';
 import {
 	ExpressService,
@@ -57,7 +57,7 @@ export class ExpressApplication {
 		}
 
 		let middlewareList = currInstance.middlewareList.map(
-			(instance: ExpressMiddleware) => {
+			(instance: BaseMiddleware) => {
 				return instance.handle.bind(instance);
 			}
 		);

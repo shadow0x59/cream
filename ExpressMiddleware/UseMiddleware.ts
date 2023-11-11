@@ -1,12 +1,12 @@
 import 'reflect-metadata';
 
 import { Route, Routes, ROUTES_METADATA_KEY } from '../HttpUtils/Route';
-import { ExpressMiddleware, ExpressMiddlewares } from './ExpressMiddleware';
+import { BaseMiddleware, BaseMiddlewares } from './ExpressMiddleware';
 import { ExpressModule } from '../ExpressAdapter/ExpressModule';
 
 export function UseMiddlewaresForController<
 	T extends { new (...args: any[]): ExpressModule }
->(middlewares: ExpressMiddlewares) {
+>(middlewares: BaseMiddlewares) {
 	return function (target: T): T {
 		return class extends target {
 			constructor(...args: any[]) {
@@ -20,7 +20,7 @@ export function UseMiddlewaresForController<
 	};
 }
 
-export function UseMiddleware<T extends ExpressMiddleware>(middleware: T) {
+export function UseMiddleware<T extends BaseMiddleware>(middleware: T) {
 	return function (
 		target: ExpressModule,
 		propertyName: string,
