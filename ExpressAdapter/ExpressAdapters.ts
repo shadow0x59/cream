@@ -14,9 +14,9 @@ import {
 } from '../ExpressMiddleware/ExpressMiddleware';
 import { RestError } from '../ExpressErrorHandler/ExpressErrorHandler';
 
-const BODY_METADATA_KEY = Symbol('express:bodyAssoc');
-const PARAMS_METADATA_KEY = Symbol('express:paramAssoc');
-const HEADERS_METADATA_KEY = Symbol('express:headersAssoc');
+export const BODY_METADATA_KEY = Symbol('express:bodyAssoc');
+export const PARAMS_METADATA_KEY = Symbol('express:paramAssoc');
+export const HEADERS_METADATA_KEY = Symbol('express:headersAssoc');
 export const MIDDLEWARE_METADATA_KEY = Symbol('express:middlewareAssoc');
 
 export function ExpressCall<T extends ExpressModule>(
@@ -57,7 +57,7 @@ export function ExpressCall<T extends ExpressModule>(
 			);
 			if (paramAssoc) {
 				for (let param of paramAssoc) {
-					args[param.index] = (req.params || [])[param.name];
+					args[param.index] = req.params[param.name];
 				}
 			}
 
@@ -133,10 +133,8 @@ export function ExpressController<
 	T extends { new (...args: any[]): ExpressModule }
 >(baseRoute: string) {
 	return function (target: T): T {
-		let routes: Routes = Reflect.getOwnMetadata(
-			ROUTES_METADATA_KEY,
-			target.prototype
-		);
+		let routes: Routes =
+			Reflect.getOwnMetadata(ROUTES_METADATA_KEY, target.prototype) || [];
 
 		return class extends target {
 			constructor(...args: any[]) {

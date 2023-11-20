@@ -8,7 +8,6 @@ import {
 } from './ExpressService/ExpressService';
 
 import { Server } from 'http';
-import mongoose from 'mongoose';
 
 type ControllerMap<T> = Map<string, T>;
 type ServiceMap<T> = ControllerMap<T>;
@@ -40,6 +39,12 @@ export class ExpressApplication {
 	 * specific route
 	 */
 	public addController<T extends ExpressModule>(controller: T) {
+		if (controller.router.stack.length == 0) {
+			throw Error(
+				'Controller should have at least one express call asssociated with it'
+			);
+		}
+
 		if (this.controllers.get(controller.className)) {
 			throw Error(
 				'Controller ' + controller.className + ' is already registered!'
@@ -49,12 +54,6 @@ export class ExpressApplication {
 		let currInstance = this.controllers
 			.set(controller.className, controller)
 			.get(controller.className)!;
-
-		if (currInstance == undefined) {
-			throw Error(
-				'Something went wrong while registering ' + controller.className
-			);
-		}
 
 		let middlewareList = currInstance.middlewareList.map(
 			(instance: BaseMiddleware) => {
@@ -109,14 +108,17 @@ export class ExpressApplication {
 	}
 
 	private async initServices() {
+		let initStatus: boolean = true;
 		for (let service of this.services) {
 			console.log('Initializing service', service[0], '...');
 			let res = false;
 			try {
 				res = await service[1].init();
+				initStatus = res;
 			} catch (e) {
 				console.log(e);
 				res = false;
+				initStatus = false;
 			}
 			if (res) {
 				console.log('Service', service[0], 'successfully initialized');
@@ -124,6 +126,8 @@ export class ExpressApplication {
 				console.log('Could not initialize service', service[0]);
 			}
 		}
+
+		return initStatus;
 	}
 
 	/**
@@ -132,7 +136,13 @@ export class ExpressApplication {
 	public async start() {
 		let boundFn = this.handleErrors.bind(this);
 		this.app.use(boundFn);
-		await this.initServices();
+		let res = await this.initServices();
+
+		if (!res) {
+			throw Error(
+				'Failed to initialize all the services, see logs for more info.'
+			);
+		}
 		this.server = this.app.listen(this.port, () => {
 			console.log('Listening on', this.port);
 		});
@@ -144,7 +154,6 @@ export class ExpressApplication {
 				if (err) {
 					reject(err);
 				}
-				await mongoose.connection.close();
 				resolve();
 			});
 		});

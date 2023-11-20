@@ -1,13 +1,21 @@
+import { NextFunction, Response } from 'express';
 import {
 	BaseMiddleware,
 	BaseMiddlewares,
+	ExtendedRequest,
 } from '../ExpressMiddleware/ExpressMiddleware';
 import { HttpMethod } from './HttpMethod';
+
+export type ExpressFunction = (
+	req: ExtendedRequest,
+	res: Response,
+	next: NextFunction
+) => Promise<void>;
 
 export class Route {
 	constructor(
 		public route: string,
-		public method: any,
+		public method: ExpressFunction,
 		public methodName: string,
 		public httpMethod: HttpMethod,
 		public middlewares: BaseMiddlewares = []

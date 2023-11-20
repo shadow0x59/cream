@@ -11,10 +11,6 @@ export function UseMiddlewaresForController<
 		return class extends target {
 			constructor(...args: any[]) {
 				super(middlewares);
-
-				if (target.name != '') {
-					this.className = target.name;
-				}
 			}
 		};
 	};
@@ -29,9 +25,15 @@ export function UseMiddleware<T extends BaseMiddleware>(middleware: T) {
 		let methodRouters: Routes =
 			Reflect.getOwnMetadata(ROUTES_METADATA_KEY, target) || [];
 
-		let route: Route = methodRouters.find(
+		let route: Route | undefined = methodRouters.find(
 			(value: Route) => value.methodName == propertyName
 		)!;
+
+		if (route == undefined) {
+			throw Error(
+				'Method ' + propertyName + ' is not a valid ExpressCall'
+			);
+		}
 
 		route.addMiddleware(middleware);
 
