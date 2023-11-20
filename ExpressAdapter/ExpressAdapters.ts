@@ -29,94 +29,96 @@ export function ExpressCall<T extends ExpressModule>(
 		descriptor: PropertyDescriptor
 	) {
 		let method = descriptor.value!;
-		let newMethod = async function (
-			req: ExtendedRequest,
-			res: Response,
-			next: NextFunction
-		) {
-			let args = [];
-			let bodyAssocs: ParameterProps = Reflect.getOwnMetadata(
-				BODY_METADATA_KEY,
-				target,
-				propertyName
-			);
-			if (bodyAssocs) {
-				for (let param of bodyAssocs) {
-					if (param.name == ':body') {
-						args[param.index] = req.body;
-					} else {
-						args[param.index] = (req.body || [])[param.name];
-					}
-				}
-			}
-
-			let paramAssoc: ParameterProps = Reflect.getOwnMetadata(
-				PARAMS_METADATA_KEY,
-				target,
-				propertyName
-			);
-			if (paramAssoc) {
-				for (let param of paramAssoc) {
-					args[param.index] = req.params[param.name];
-				}
-			}
-
-			let headerMappings: ParameterProps = Reflect.getOwnMetadata(
-				HEADERS_METADATA_KEY,
-				target,
-				propertyName
-			);
-
-			if (headerMappings) {
-				for (let mapping of headerMappings) {
-					args[mapping.index] = req.header(mapping.name);
-				}
-			}
-
-			let middlewareAssoc: MiddlewareParameterProps =
-				Reflect.getOwnMetadata(
-					MIDDLEWARE_METADATA_KEY,
+		let newMethod = (thisArg: ExpressModule) =>
+			async function (
+				req: ExtendedRequest,
+				res: Response,
+				next: NextFunction
+			) {
+				let args = [];
+				let bodyAssocs: ParameterProps = Reflect.getOwnMetadata(
+					BODY_METADATA_KEY,
 					target,
 					propertyName
 				);
-			if (middlewareAssoc) {
-				for (let param of middlewareAssoc) {
-					let collections: MiddlewareDataCollections =
-						req.middlewareDataCollections || new Map();
-
-					let collection: MiddlewareDataCollection = collections.get(
-						param.collection
-					);
-
-					if (collection) {
-						if (param.name == '$') {
-							args[param.index] = collection;
+				if (bodyAssocs) {
+					for (let param of bodyAssocs) {
+						if (param.name == ':body') {
+							args[param.index] = req.body;
 						} else {
-							args[param.index] = (collection as any)[param.name];
+							args[param.index] = (req.body || [])[param.name];
 						}
-					} else {
-						args[param.index] = undefined;
 					}
 				}
-			}
 
-			try {
-				let result = (await method.apply(target, args)) as Message;
-				res.status(result.status || 200);
-				res.set(
-					'Content-Type',
-					result.contentType || 'application/json'
+				let paramAssoc: ParameterProps = Reflect.getOwnMetadata(
+					PARAMS_METADATA_KEY,
+					target,
+					propertyName
 				);
-				res.send(result.content);
-			} catch (e) {
-				if (e instanceof RestError) {
-					res.status((e as RestError).statusCode);
-				} else {
-					res.status(500);
+				if (paramAssoc) {
+					for (let param of paramAssoc) {
+						args[param.index] = req.params[param.name];
+					}
 				}
-				next(e);
-			}
-		};
+
+				let headerMappings: ParameterProps = Reflect.getOwnMetadata(
+					HEADERS_METADATA_KEY,
+					target,
+					propertyName
+				);
+
+				if (headerMappings) {
+					for (let mapping of headerMappings) {
+						args[mapping.index] = req.header(mapping.name);
+					}
+				}
+
+				let middlewareAssoc: MiddlewareParameterProps =
+					Reflect.getOwnMetadata(
+						MIDDLEWARE_METADATA_KEY,
+						target,
+						propertyName
+					);
+				if (middlewareAssoc) {
+					for (let param of middlewareAssoc) {
+						let collections: MiddlewareDataCollections =
+							req.middlewareDataCollections || new Map();
+
+						let collection: MiddlewareDataCollection =
+							collections.get(param.collection);
+
+						if (collection) {
+							if (param.name == '$') {
+								args[param.index] = collection;
+							} else {
+								args[param.index] = (collection as any)[
+									param.name
+								];
+							}
+						} else {
+							args[param.index] = undefined;
+						}
+					}
+				}
+
+				try {
+					let result = (await method.apply(thisArg, args)) as Message;
+					res.status(result.status || 200);
+					res.set(
+						'Content-Type',
+						result.contentType || 'application/json'
+					);
+					res.send(result.content);
+				} catch (e) {
+					if (e instanceof RestError) {
+						res.status((e as RestError).statusCode);
+					} else {
+						res.status(500);
+					}
+					next(e);
+				}
+			};
 
 		let methodRouters: Routes =
 			Reflect.getOwnMetadata(ROUTES_METADATA_KEY, target) || [];
@@ -153,7 +155,7 @@ export function ExpressController<
 			private initRoute(route: Route) {
 				let expressRoute = this.router.route(route.route);
 				let expressRouteParams: any[] = route.getMiddlewareMethods();
-				expressRouteParams.push(route.method.bind(this));
+				expressRouteParams.push(route.method(this));
 				switch (route.httpMethod) {
 					case HttpMethod.GET:
 						expressRoute.get.apply(

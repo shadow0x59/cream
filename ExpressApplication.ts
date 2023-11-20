@@ -66,7 +66,7 @@ export class ExpressApplication {
 		}
 		this.app.use(currInstance.baseUrl, currInstance.router);
 
-		controller.app = this;
+		currInstance.app = this;
 	}
 
 	public addControllers(controllers: ExpressModules) {

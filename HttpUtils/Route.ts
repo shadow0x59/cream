@@ -5,6 +5,7 @@ import {
 	ExtendedRequest,
 } from '../ExpressMiddleware/ExpressMiddleware';
 import { HttpMethod } from './HttpMethod';
+import { ExpressModule } from '../ExpressAdapter/ExpressModule';
 
 export type ExpressFunction = (
 	req: ExtendedRequest,
@@ -12,10 +13,14 @@ export type ExpressFunction = (
 	next: NextFunction
 ) => Promise<void>;
 
+export type ExpressFunctionFactory = (
+	thisArg: ExpressModule
+) => ExpressFunction;
+
 export class Route {
 	constructor(
 		public route: string,
-		public method: ExpressFunction,
+		public method: ExpressFunctionFactory,
 		public methodName: string,
 		public httpMethod: HttpMethod,
 		public middlewares: BaseMiddlewares = []
