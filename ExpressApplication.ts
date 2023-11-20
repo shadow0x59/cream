@@ -114,7 +114,7 @@ export class ExpressApplication {
 			let res = false;
 			try {
 				res = await service[1].init();
-				initStatus = res;
+				initStatus = res ? initStatus : false;
 			} catch (e) {
 				console.log(e);
 				res = false;
