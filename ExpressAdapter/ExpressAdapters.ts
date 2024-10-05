@@ -131,6 +131,22 @@ export function ExpressCall<T extends ExpressModule>(
 	};
 }
 
+export function Get<T extends ExpressModule>(relativePath: string) {
+	return ExpressCall<T>(relativePath, HttpMethod.GET);
+}
+
+export function Post<T extends ExpressModule>(relativePath: string) {
+	return ExpressCall<T>(relativePath, HttpMethod.POST);
+}
+
+export function Put<T extends ExpressModule>(relativePath: string) {
+	return ExpressCall<T>(relativePath, HttpMethod.PUT);
+}
+
+export function Delete<T extends ExpressModule>(relativePath: string) {
+	return ExpressCall<T>(relativePath, HttpMethod.DELETE);
+}
+
 export function ExpressController<
 	T extends { new (...args: any[]): ExpressModule }
 >(baseRoute: string) {

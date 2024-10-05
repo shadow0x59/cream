@@ -75,7 +75,7 @@ export type BaseMiddlewares = BaseMiddleware[];
 
 export class MiddlewareReturnData<T = {}> {
 	constructor(
-		public readonly content?: T,
-		public readonly collectionName = 'default'
+		public readonly collectionName = 'default',
+		public readonly content?: T
 	) {}
 }
