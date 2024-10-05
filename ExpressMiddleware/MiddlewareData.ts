@@ -14,8 +14,8 @@ export class MiddlewareParameterProp extends ParameterProp {
 export type MiddlewareParameterProps = MiddlewareParameterProp[];
 
 export function MiddlewareData(
-	dataName: string = '$',
-	collectionName: string = 'default'
+	collectionName: string = 'default',
+	dataName: string = '$'
 ) {
 	return function (
 		target: Object,
