@@ -18,9 +18,13 @@ import { ParameterProp } from '../ExpressAdapter/ParameterProp';
 import { MIDDLEWARE_METADATA_KEY } from '../ExpressAdapter/ExpressAdapters';
 
 export class MiddlewareParameterProp extends ParameterProp {
-  constructor(index: number, name: string, public readonly collection: string) {
-    super(index, name);
-  }
+	constructor(
+		index: number,
+		name: string,
+		public readonly collection: string
+	) {
+		super(index, name);
+	}
 }
 
 export type MiddlewareParameterProps = MiddlewareParameterProp[];
