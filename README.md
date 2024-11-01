@@ -97,7 +97,7 @@ console.log(myController.splitString("Hello, World").content);
 ]
 ```
 
-# Future Addons
+# Future Additions
 
 As seen the extension library is not perfect.   
 A change I want to implement is to allow serialization of the output in a declarative manner something like
