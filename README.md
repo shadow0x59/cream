@@ -81,7 +81,7 @@ myInstance.start();
 
 ```
 
-Albeit looking more complicated for larger projects the benefit is clearly visible. The classes define the 
+Albeit looking complicated for this simple example, in case of larger projects the benefit is clearly visible. The classes define the 
 structure of the API! It is also made such that if the method stripString is called normally
 like 
 
