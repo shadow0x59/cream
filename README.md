@@ -3,10 +3,6 @@
 Cream stands for Concise REST API Maker and it is a ExpressJS extension mainly targeting TypeScript builds.
 It wasn't tested on plain JS.
 
-# Warnings
-
-Note that this is still experimental so anything about this repository can change at any time.
-
 # Installation
 
 ```npm
