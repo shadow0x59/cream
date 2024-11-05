@@ -1,0 +1,48 @@
+{
+	"name": "cream",
+	"version": "1.0.0",
+	"description": "Concise REST API Maker - An extension library for express to create REST APIs faster",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"directories": {
+		"doc": "docs"
+	},
+	"scripts": {
+		"dist": "tsc",
+		"test": "jest"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://gitlab.com/worklog1/cream.git"
+	},
+	"keywords": [
+		"rest",
+		"api",
+		"express",
+		"extension",
+		"descriptive",
+		"web",
+		"backend",
+		"typescript"
+	],
+	"author": "Raul Radu",
+	"license": "SEE LICENSE IN LICENSE",
+	"bugs": {
+		"url": "https://gitlab.com/worklog1/express-utils/issues"
+	},
+	"homepage": "https://gitlab.com/worklog1/express-utils#readme",
+	"devDependencies": {
+		"@types/express": "^5.0.0",
+		"@types/jest": "^29.5.14",
+		"@types/node": "^22.9.0",
+		"@types/supertest": "^6.0.2",
+		"express": "^4.21.1",
+		"jest": "^29.7.0",
+		"supertest": "^7.0.0",
+		"ts-jest": "^29.2.5",
+		"typescript": "^5.6.3"
+	},
+	"dependencies": {
+		"reflect-metadata": "^0.2.2"
+	}
+}

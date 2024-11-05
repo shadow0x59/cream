@@ -19,7 +19,7 @@ import {
 	BaseMiddleware,
 	BaseMiddlewares,
 	ExtendedRequest,
-} from '../../ExpressMiddleware/ExpressMiddleware';
+} from '../ExpressMiddleware/ExpressMiddleware';
 import { HttpMethod } from './HttpMethod';
 import { ExpressModule } from '../ExpressAdapter/ExpressModule';
 

@@ -85,13 +85,27 @@ export class ExpressApplication {
 		currInstance.app = this;
 	}
 
-	public addControllers(controllers: ExpressModules) {
+	/**
+	 * This method adds a list of controllers to the current application
+	 * It will add them in the provided order
+	 * @param controllers The list of controllers to be added to the current application
+	 * @returns void
+	 */
+	public addControllers(controllers: ExpressModules): void {
 		for (let controller of controllers) {
 			this.addController(controller);
 		}
 	}
 
-	public addService(service: ExpressService) {
+	/**
+	 * This method adds a service to the current application
+	 * The service must be uniquely identified by @ExpressSerivce.IdentifiedBy(id: string)
+	 * decorator
+	 *
+	 * @param service the service to be added to the current application
+	 * @returns void
+	 */
+	public addService(service: ExpressService): void {
 		if (this.services.get(service.id!)) {
 			throw Error('Service ' + service.id! + ' is already registered!');
 		}
@@ -101,6 +115,11 @@ export class ExpressApplication {
 		service.app = this;
 	}
 
+	/**
+	 * Adds a list of services to the current application
+	 * Remember that the services must be uniquely identified
+	 * @param services The list of services to be added
+	 */
 	public addServices(services: ExpressServices) {
 		for (let service of services) {
 			this.addService(service);
@@ -108,7 +127,8 @@ export class ExpressApplication {
 	}
 
 	/**
-	 * This method is an interface to express for handling errors
+	 * This method is an interface to express for providing a custom error
+	 * handler
 	 */
 	private handleErrors(
 		err: Error,
@@ -123,7 +143,14 @@ export class ExpressApplication {
 		}
 	}
 
-	private async initServices() {
+	/**
+	 * This method initializes all the registered services.
+	 * It tries to initialize all services before throwing an error
+	 * In this way the developer can see all the issues at once and
+	 * doesn't need to recompile for each error
+	 * @returns true if all services are correctly intialized, false otherwise
+	 */
+	private async initServices(): Promise<boolean> {
 		let initStatus: boolean = true;
 		for (let service of this.services) {
 			console.log('Initializing service', service[0], '...');
