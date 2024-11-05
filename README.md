@@ -9,19 +9,17 @@ Note that this is still experimental so anything about this repository can chang
 
 # Installation
 
-To use it, since it is not available publicly to npm, I suggest to install it as a git submodule.
+```npm
+npm install @creamapi/cream
+```
 
 # Usage
 
 Let's start from a easy task: return an array of tokens given a string separated by a empty space (only space, tabs and new lines not included)
-An example: given the string `"Hello, World!  "` we have the following result 
+An example: given the string `"Hello, World!  "` we have the following result
+
 ```json
-[
-    "Hello,", 
-    "World", 
-    "", 
-    ""
-]
+["Hello,", "World", "", ""]
 ```
 
 In ExpressJS it is easily done (for simplicity lets use a GET request) like this
@@ -44,62 +42,58 @@ app.listen(4040);
 With Cream it would look more like this
 
 ```ts
-import express from "express";
-import { 
-    ExpressApplication, 
-    ExpressController, 
-    ExpressModule, 
-    UrlParam,
-    Get,
-    Message
-} from "./libs/express-utils";
+import express from 'express';
+import {
+	ExpressApplication,
+	ExpressController,
+	ExpressModule,
+	UrlParam,
+	Get,
+	Message,
+} from '@creamapi/cream';
 
-@ExpressController("/")
+@ExpressController('/')
 class MyController extends ExpressModule {
-    @Get("/:data")
-    async stripString(@UrlParam('data') data: string): Promise<Message> {
-        if (data.length == 0) {
-            throw new RestError("Data is of length 0", 400);
-        }
+	@Get('/:data')
+	async stripString(@UrlParam('data') data: string): Promise<Message> {
+		if (data.length == 0) {
+			throw new RestError('Data is of length 0', 400);
+		}
 
-        // any other error will be treated as a 500 Internal Server Error
-        return new Message(data.split(" "), "application/json");
-    }
+		// any other error will be treated as a 500 Internal Server Error
+		return new Message(data.split(' '), 'application/json');
+	}
 }
 
 class MyApp extends ExpressApplication {
-    constructor() {
-        let app = express();
-        app.use(express.json());
-        super(app, 4040);
-    }
+	constructor() {
+		let app = express();
+		app.use(express.json());
+		super(app, 4040);
+	}
 }
 
 let myInstance = new MyApp();
 myInstance.addController(new MyController());
 myInstance.start();
-
 ```
 
-Albeit looking complicated for this simple example, in case of larger projects the benefit is clearly visible. The classes define the 
+Albeit looking complicated for this simple example, in case of larger projects the benefit is clearly visible. The classes define the
 structure of the API! It is also made such that if the method stripString is called normally
-like 
+like
 
 ```ts
 let myController = new MyController();
 
-console.log(myController.splitString("Hello, World").content);
+console.log(myController.splitString('Hello, World').content);
 
 // the output will be
-[
-    "Hello,",
-    "World"
-]
+['Hello,', 'World'];
 ```
 
 # Future Additions
 
-As seen the extension library is not perfect.   
+As seen the extension library is not perfect.  
 A change I want to implement is to allow serialization of the output in a declarative manner something like
 
 ```ts
@@ -107,10 +101,10 @@ A change I want to implement is to allow serialization of the output in a declar
 class MyCustData {
     @AutoMap<String>()
     field1: string;
-    
+
     @Map<Int>("myAwesomeField2")
     field2: int;
-    
+
     constructor(field1: string, field2: int) {
         this.field1 = field1;
         this.field2 = field2;
@@ -123,8 +117,7 @@ class MyCustData {
     "field1": "<value>",
     "myAwesomeField2": 123
 }
-// but only when the method that returns a instance of 
+// but only when the method that returns a instance of
 // MyCustData is called from an API request, otherwise
 // it will return the plain object.
 ```
-
