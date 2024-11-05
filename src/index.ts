@@ -13,9 +13,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export { ExpressCall } from './ExpressAdapter/ExpressAdapters';
 export { ExpressModule, ExpressModules } from './ExpressAdapter/ExpressModule';
+export {
+	ExpressController,
+	ExpressCall,
+	Get,
+	Post,
+	Put,
+	Delete,
+	BodyField,
+	Body,
+	UrlParameter,
+	Header,
+} from './ExpressAdapter/ExpressAdapters';
+export {
+	RestError,
+	ErrorInfo,
+	ExpressErrorHandler,
+} from './ExpressErrorHandler/ExpressErrorHandler';
 export { Message, MessageType } from './ExchangeUtils/Message';
 export { ExpressApplication } from './ExpressApplication';
-export { ExpressMiddleware } from './ExpressMiddleware/ExpressMiddleware';
-export { UseMiddleware } from './ExpressMiddleware/UseMiddleware';
+export {
+	ExpressMiddleware,
+	AsyncExpressMiddleware,
+	MiddlewareDataCollection,
+	MiddlewareDataCollections,
+	MiddlewareReturnData,
+} from './ExpressMiddleware/ExpressMiddleware';
+export { MiddlewareData } from './ExpressMiddleware/MiddlewareData';
+export {
+	UseMiddleware,
+	UseMiddlewaresForController,
+} from './ExpressMiddleware/UseMiddleware';
+
+export {
+	ExpressService,
+	ExpressServices,
+} from './ExpressService/ExpressService';
+
+export { HttpMethod } from './HttpUtils/HttpMethod';

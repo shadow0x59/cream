@@ -1,5 +1,5 @@
 {
-	"name": "cream",
+	"name": "@creamapi/cream",
 	"version": "1.0.0",
 	"description": "Concise REST API Maker - An extension library for express to create REST APIs faster",
 	"main": "dist/index.js",
