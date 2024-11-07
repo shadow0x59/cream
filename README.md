@@ -50,7 +50,7 @@ import {
 
 @ExpressController('/')
 class MyController extends ExpressModule {
-	@Get('/:data')
+	@Get('/tokenize/:data')
 	async stripString(@UrlParam('data') data: string): Promise<Message> {
 		if (data.length == 0) {
 			throw new RestError('Data is of length 0', 400);
@@ -89,31 +89,24 @@ console.log(myController.splitString('Hello, World').content);
 
 # Future Additions
 
-As seen the extension library is not perfect.  
-A change I want to implement is to allow serialization of the output in a declarative manner something like
+List of open issues:
+ - [Declarative Serialization-Deserialization of Input Views and Output Views](https://gitlab.com/worklog1/cream/-/issues/3)
 
-```ts
-@Serializers.JSON
-class MyCustData {
-    @AutoMap<String>()
-    field1: string;
+# Contributors
 
-    @Map<Int>("myAwesomeField2")
-    field2: int;
+## Owner
+[shadow0x59 - Radu Raul](https://gravatar.com/shadow0x59)
 
-    constructor(field1: string, field2: int) {
-        this.field1 = field1;
-        this.field2 = field2;
-    }
-}
+## Maintainer
 
+## Developer
 
-// Then it will be serialized to a JSON object like
-{
-    "field1": "<value>",
-    "myAwesomeField2": 123
-}
-// but only when the method that returns a instance of
-// MyCustData is called from an API request, otherwise
-// it will return the plain object.
-```
+## Bug Hunter
+
+## Featurerist
+
+# Donations
+
+You want to keep this project up, but don't know how to collaborate?   
+No worries! If you can and if you wish you can tip me a small amount :)    
+Here on [Buy Me A Coffee](https://www.buymeacoffee.com/shadow0x59)
