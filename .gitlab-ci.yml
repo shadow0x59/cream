@@ -17,10 +17,10 @@ cache:
 install-dependencies:
     stage: .pre
     cache:
-    # Mimic &global_cache_node_mods config but override policy
+    # Mimic &global_cache_node_modules config but override policy
     # to allow this job to update the cache at the end of the job
     # and only update if it was a successful job (#5)
-        - <<: *global_cache_node_mods
+        - <<: *global_cache_node_modules
           when: on_success
           policy: pull-push
         - key: ${CI_JOB_NAME}
