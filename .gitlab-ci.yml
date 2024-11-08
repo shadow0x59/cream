@@ -1,0 +1,72 @@
+image: node
+
+stages:
+  - build
+  - test
+#  - deploy # deployment is disabled for now
+
+cache:
+    - &global_cache_node_modules
+      key: 
+          files:
+              - package-lock.json
+      paths:
+          - node_modules/
+      policy: pull
+
+install-dependencies:
+    stage: .pre
+    cache:
+    # Mimic &global_cache_node_modules config but override policy
+    # to allow this job to update the cache at the end of the job
+    # and only update if it was a successful job (#5)
+        - <<: *global_cache_node_modules
+          when: on_success
+          policy: pull-push
+        - key: ${CI_JOB_NAME}
+            # must be inside $CI_PROJECT_DIR for gitlab-runner caching (#3)
+          paths:
+                - .npm/
+          when: on_success
+          policy: pull-push
+    script:
+        - npm ci --cache .npm --prefer-offline
+
+build:       # This job runs in the build stage, which runs first.
+  stage: build
+  artifacts:
+    untracked: false
+    when: on_success
+    access: all
+    expire_in: 30 days
+    paths:
+      - dist/
+  script:
+    - npm run dist
+  
+unit-test-job:   # This job runs in the test stage.
+  stage: test    # It only starts when the job in the build stage completes successfully.
+  script:
+    - npm test -- --coverage
+  artifacts:
+    untracked: false
+    when: on_success
+    access: all
+    expire_in: 30 days
+    paths:
+      - coverage/
+
+lint-test-job:   # This job also runs in the test stage.
+  stage: test    # It can run at the same time as unit-test-job (in parallel).
+  script:
+    - npm install --save-dev --save-exact prettier 
+    - npx prettier . --check
+
+#deploy-job:      # This job runs in the deploy stage.
+#  stage: deploy  # It only runs when *both* jobs in the test stage complete successfully.
+#  environment: production
+#  when: on-success
+#  - job: build
+#    artifacts: true
+#  script:
+    - npm publish
