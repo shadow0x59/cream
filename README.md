@@ -90,11 +90,13 @@ console.log(myController.splitString('Hello, World').content);
 # Future Additions
 
 List of open issues:
- - [Declarative Serialization-Deserialization of Input Views and Output Views](https://gitlab.com/worklog1/cream/-/issues/3)
+
+-   [Declarative Serialization-Deserialization of Input Views and Output Views](https://gitlab.com/worklog1/cream/-/issues/3)
 
 # Contributors
 
 ## Owner
+
 [shadow0x59 - Radu Raul](https://gravatar.com/shadow0x59)
 
 ## Maintainer
@@ -107,6 +109,6 @@ List of open issues:
 
 # Donations
 
-You want to keep this project up, but don't know how to collaborate?   
-No worries! If you can and if you wish you can tip me a small amount :)    
+You want to keep this project up, but don't know how to collaborate?  
+No worries! If you can and if you wish you can tip me a small amount :)  
 Here on [Buy Me A Coffee](https://www.buymeacoffee.com/shadow0x59)

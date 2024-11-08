@@ -16,11 +16,7 @@
 
 import { ExpressApplication, ExpressMiddleware, ExpressModule } from '..';
 import express, { Request, Response } from 'express';
-import {
-	ExpressCall,
-	ExpressController,
-	Get,
-} from '../ExpressAdapter/ExpressAdapters';
+import { ExpressController, Get } from '../ExpressAdapter/ExpressAdapters';
 import { UseMiddlewaresForController } from '../ExpressMiddleware/UseMiddleware';
 import {
 	ExtendedRequest,

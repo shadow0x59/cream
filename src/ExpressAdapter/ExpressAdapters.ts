@@ -166,7 +166,7 @@ export function Delete<T extends ExpressModule>(relativePath: string) {
 }
 
 export function ExpressController<
-	T extends { new (...args: any[]): ExpressModule }
+	T extends { new (...args: any[]): ExpressModule },
 >(baseRoute: string) {
 	return function (target: T): T {
 		let routes: Routes =

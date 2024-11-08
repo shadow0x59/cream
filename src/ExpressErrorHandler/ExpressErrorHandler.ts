@@ -17,7 +17,10 @@
 import { Response, Request } from 'express';
 
 export class RestError extends Error {
-	constructor(message: string, public readonly statusCode: number) {
+	constructor(
+		message: string,
+		public readonly statusCode: number
+	) {
 		super(message);
 	}
 }

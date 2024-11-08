@@ -21,7 +21,7 @@ import { BaseMiddleware, BaseMiddlewares } from './ExpressMiddleware';
 import { ExpressModule } from '../ExpressAdapter/ExpressModule';
 
 export function UseMiddlewaresForController<
-	T extends { new (...args: any[]): ExpressModule }
+	T extends { new (...args: any[]): ExpressModule },
 >(middlewares: BaseMiddlewares) {
 	return function (target: T): T {
 		return class extends target {
