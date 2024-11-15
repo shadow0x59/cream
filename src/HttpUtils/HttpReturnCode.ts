@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-export type MessageType =
-	| 'application/json'
-	| 'image/jpeg'
-	| 'text/html'
-	| 'text/css'
-	| 'text/javascript'
-	| 'text/plain';
+import { Constructable } from '../Utils/Constructable';
+
+export const HTTP_CODE_METADATA_KEY = Symbol('cream:http:return-code');
+
+export function HttpReturnCode<T extends Constructable>(code: number) {
+	return function (target: T): T {
+		Reflect.defineMetadata(HTTP_CODE_METADATA_KEY, code, target.prototype);
+		return target;
+	};
+}
