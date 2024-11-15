@@ -62,7 +62,11 @@ export namespace CreamSerializers {
 				outStream +=
 					(await this.serialize(elem.dataLabel, elem.data)) + ',';
 			}
-			return outStream.slice(0, outStream.length - 1) + ']';
+			if (outStream.endsWith(',')) {
+				return outStream.slice(0, outStream.length - 1) + ']';
+			} else {
+				return outStream + ']';
+			}
 		}
 
 		async serializeObject(serialStream: SerialBite[]): Promise<string> {
