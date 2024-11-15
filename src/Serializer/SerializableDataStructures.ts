@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-export type MessageType =
-	| 'application/json'
-	| 'image/jpeg'
-	| 'text/html'
-	| 'text/css'
-	| 'text/javascript'
-	| 'text/plain';
+import { Serializable } from './Serializable';
+import { CreamSerializers } from './CommonSerializers';
+
+@Serializable(CreamSerializers.JSON)
+export class JSONSerializableArray<T> extends Array<T> {
+	constructor(array: T[]) {
+		super(...array);
+	}
+}

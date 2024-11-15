@@ -15,15 +15,28 @@
  */
 
 import { Response } from 'express';
-import { ExpressMiddleware, ExpressModule, Message, UseMiddleware } from '..';
+import {
+	AutoMap,
+	ContentType,
+	CreamSerializers,
+	ExpressMiddleware,
+	ExpressModule,
+	HttpMethod,
+	HttpReturnCode,
+	Serializable,
+	UseMiddleware,
+} from '..';
 import {
 	BODY_METADATA_KEY,
 	Body,
-	ExpressCall,
+	Delete,
 	ExpressController,
+	Get,
 	Header,
 	MIDDLEWARE_METADATA_KEY,
 	PARAMS_METADATA_KEY,
+	Post,
+	Put,
 	UrlParameter,
 } from '../ExpressAdapter/ExpressAdapters';
 import {
@@ -38,7 +51,6 @@ import {
 import { ParameterProp } from '../ExpressAdapter/ParameterProp';
 import { RestError } from '../ExpressErrorHandler/ExpressErrorHandler';
 import { UseMiddlewaresForController } from '../ExpressMiddleware/UseMiddleware';
-import { HttpMethod } from '../HttpUtils/HttpMethod';
 
 class MockMiddleware extends ExpressMiddleware {
 	public behaviour(
@@ -51,52 +63,97 @@ class MockMiddleware extends ExpressMiddleware {
 	}
 }
 
+@ContentType('application/json')
+@HttpReturnCode(200)
+@Serializable(CreamSerializers.JSON)
+class TestDataView {
+	@AutoMap
+	testData: string;
+
+	constructor(testData: string) {
+		this.testData = testData;
+	}
+}
+
+@ContentType('application/json')
+@HttpReturnCode(200)
+@Serializable(CreamSerializers.JSON)
+class TestCall3View {
+	@AutoMap
+	body: string;
+
+	@AutoMap
+	field1: string;
+
+	@AutoMap
+	middlewareData?: string;
+
+	constructor(body: string, field1: string, middlewareData?: string) {
+		this.body = body;
+		this.field1 = field1;
+		this.middlewareData = middlewareData;
+	}
+}
+
+@ContentType('application/json')
+@HttpReturnCode(200)
+@Serializable(CreamSerializers.JSON)
+class DeleteMethodView {
+	@AutoMap
+	contentType: string;
+
+	constructor(contentType: string) {
+		this.contentType = contentType;
+	}
+}
+
+@ContentType('application/json')
+@HttpReturnCode(200)
+@Serializable(CreamSerializers.JSON)
+class EmptyJson {}
+
 @UseMiddlewaresForController([new MockMiddleware()])
 @ExpressController('test')
 class MockController extends ExpressModule {
-	@ExpressCall('/async-call')
+	@Get('/async-call')
 	public async asyncCall() {
-		return new Message({ testData: 'test' });
+		return new TestDataView('test');
 	}
 
-	@ExpressCall('/sync-call')
+	@Get('/sync-call')
 	public syncCall() {
-		return new Message({ testData: 'sync-test' });
+		return new TestDataView('sync-test');
 	}
 
-	@ExpressCall('/test-call-2')
+	@Get('/test-call-2')
 	public testCall2() {
-		return new Message('string', 'text/plain', 400);
+		return 'string';
 	}
 
 	@UseMiddleware(new MockMiddleware())
-	@ExpressCall('/test/:field1', HttpMethod.POST)
+	@Post('/test/:field1')
 	public testCall3(
 		@Body() data: string,
 		@UrlParameter('field1') field1: string,
 		@MiddlewareData('myMockedMiddleware', 'myMiddlewareData')
 		middlewareData: string | undefined = undefined
 	) {
-		return new Message({
-			body: data,
-			field1: field1,
-			middlewareData: middlewareData,
-		});
+		return new TestCall3View(data, field1, middlewareData);
 	}
 
-	@ExpressCall('/test-3')
+	@Get('/test-3')
 	public throwsRestError() {
 		throw new RestError('My Message', 404);
 	}
 
-	@ExpressCall('delete-route', HttpMethod.DELETE)
+	@Delete('delete-route')
 	public deleteMethod(@Header('Content-Type') contentType: string) {
-		return new Message({ contentType: contentType });
+		return new DeleteMethodView(contentType);
 	}
 
-	@ExpressCall('put-route', HttpMethod.PUT)
+	@Put('put-route')
 	public putMethod() {
-		return new Message({});
+		return new EmptyJson();
 	}
 
 	private normalMethod() {
@@ -138,9 +195,7 @@ describe('ExpressController & ExpressMiddleware Test Suite', () => {
 	it('Should call async methods normally', async () => {
 		try {
 			let res = await mockInstance.asyncCall();
-
-			expect(res.status).toBe(200);
-			expect(res.content.testData).toBe('test');
+			expect(res.testData).toBe('test');
 		} catch (e) {
 			expect(e).not.toBeDefined();
 		}
@@ -150,8 +205,7 @@ describe('ExpressController & ExpressMiddleware Test Suite', () => {
 		try {
 			let res = mockInstance.syncCall();
 
-			expect(res.status).toBe(200);
-			expect(res.content.testData).toBe('sync-test');
+			expect(res.testData).toBe('sync-test');
 		} catch (e) {
 			expect(e).not.toBeDefined();
 		}
@@ -160,15 +214,13 @@ describe('ExpressController & ExpressMiddleware Test Suite', () => {
 	it('Should return a valid message', () => {
 		let res = mockInstance.testCall2();
 
-		expect(res.content).toBe('string');
-		expect(res.contentType).toBe('text/plain');
-		expect(res.status).toBe(400);
+		expect(res).toBe('string');
 	});
 
 	it('Should get parameters by normal calling', () => {
 		let res = mockInstance.testCall3('passed-data', 'fieldData');
-		expect(res.content.body).toBe('passed-data');
-		expect(res.content.field1).toBe('fieldData');
+		expect(res.body).toBe('passed-data');
+		expect(res.field1).toBe('fieldData');
 	});
 
 	it('Should have 3 parameters to be injected', async () => {

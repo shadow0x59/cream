@@ -16,32 +16,33 @@
 
 import express, { Response, Request, Express } from 'express';
 import {
+	AutoMap,
+	CreamSerializers,
 	ExpressApplication,
 	ExpressMiddleware,
 	ExpressModule,
-	Message,
+	Serializable,
 	UseMiddleware,
-} from '..';
-import {
 	Body,
 	BodyField,
-	ExpressCall,
 	ExpressController,
 	Header,
 	UrlParameter,
-} from '../ExpressAdapter/ExpressAdapters';
-import {
 	AsyncExpressMiddleware,
 	ExtendedRequest,
 	MiddlewareReturnData,
-} from '../ExpressMiddleware/ExpressMiddleware';
-import {
 	ExpressErrorHandler,
 	RestError,
-} from '../ExpressErrorHandler/ExpressErrorHandler';
-import { MiddlewareData } from '../ExpressMiddleware/MiddlewareData';
+	MiddlewareData,
+	ContentType,
+	Get,
+	HttpReturnCode,
+	Post,
+	Meta,
+} from '..';
+
 import supertest from 'supertest';
-import { HttpMethod } from '../HttpUtils/HttpMethod';
+import { SerializerCommon } from '../Serializer/ExpressSerializer';
 
 interface AuthData {
 	authHeader: string;
@@ -116,23 +117,91 @@ class CascadedGenericMiddleware extends ExpressMiddleware {
 	}
 }
 
+@HttpReturnCode(200)
+@ContentType('application/json')
+@Serializable(CreamSerializers.JSON)
+class FastMessage {
+	@AutoMap
+	message: string;
+
+	constructor(message: string) {
+		this.message = message;
+	}
+}
+
+@HttpReturnCode(200)
+@ContentType('application/json')
+@Serializable(CreamSerializers.JSON)
+class ThrowinMethodMessage {
+	@AutoMap
+	auth: string = 'correct';
+
+	@AutoMap
+	middleware?: string;
+
+	constructor(middleware: string | undefined) {
+		this.middleware = middleware;
+	}
+}
+
+@HttpReturnCode(200)
+@ContentType('application/json')
+@Serializable(CreamSerializers.JSON)
+class CascadedMetadataView {
+	@AutoMap
+	myContent: string;
+
+	@AutoMap
+	mySecondContent: string;
+
+	constructor(anyObj: CascadedMetadataView) {
+		this.myContent = anyObj.myContent;
+		this.mySecondContent = anyObj.mySecondContent;
+	}
+}
+
+@HttpReturnCode(200)
+@ContentType('application/json')
+@Serializable(CreamSerializers.JSON)
+class WithBodyTestView {
+	@Meta(SerializerCommon.Attributes.AutoSerialize)
+	@AutoMap
+	gotBody: any;
+
+	@AutoMap
+	field1: string;
+
+	@AutoMap
+	field2?: string;
+
+	@AutoMap
+	param?: string;
+
+	constructor(gotBody: any, field1: string, field2?: string, param?: string) {
+		this.gotBody = gotBody;
+		this.field1 = field1;
+		this.field2 = field2;
+		this.param = param;
+	}
+}
+
 @ExpressController('/my-route')
 class MyController extends ExpressModule {
 	@UseMiddleware(new SyncMiddleware())
-	@ExpressCall('/do-stuff')
+	@Get('/do-stuff')
 	public async doStuff(
 		@MiddlewareData('auth', 'authHeader') authHeader: string,
 		@MiddlewareData('auth') authData: AuthData
-	): Promise<Message> {
+	): Promise<FastMessage> {
 		if (authHeader != authData.authHeader) {
 			throw new RestError('This should be impossible', 500);
 		}
 
-		return new Message({ message: 'ok' });
+		return new FastMessage('ok');
 	}
 
 	@UseMiddleware(new ASyncMiddleware())
-	@ExpressCall('/do-async')
+	@Get('/do-async')
 	public async doAsyncStuff(
 		@MiddlewareData('async-auth', 'authHeader') authHeader: string,
 		@MiddlewareData('async-auth') authData: AuthData
@@ -141,10 +210,10 @@ class MyController extends ExpressModule {
 			throw new RestError('This should be impossible', 500);
 		}
 
-		return new Message({ message: 'async-ok' });
+		return new FastMessage('async-ok');
 	}
 
-	@ExpressCall('/throw/:errorType')
+	@Get('/throw/:errorType')
 	public async throwingMethod(
 		@UrlParameter('errorType') eType: string,
 		@MiddlewareData('not-existing', 'dataField')
@@ -152,10 +221,7 @@ class MyController extends ExpressModule {
 		@Header('Authorization') auth: string
 	) {
 		if (auth == 'correct') {
-			return new Message({
-				auth: 'correct',
-				middleware: middlewareData,
-			});
+			return new ThrowinMethodMessage(middlewareData);
 		}
 
 		if (eType == 'rest-error') {
@@ -166,30 +232,36 @@ class MyController extends ExpressModule {
 
 	@UseMiddleware(new CascadedGenericMiddleware())
 	@UseMiddleware(new GenericMiddleware())
-	@ExpressCall('/generic-collection')
+	@Get('/generic-collection')
 	public genericCall(@MiddlewareData() data: any) {
-		return new Message(data);
+		return new CascadedMetadataView(data);
 	}
 
-	@ExpressCall('/with-body', HttpMethod.POST)
+	@Post('/with-body')
 	public async postWithBodyAndNoParams(
-		@UrlParameter('no-param') noParam: string,
+		@UrlParameter('no-param') noParam: string | undefined,
 		@Body() body: any,
 		@BodyField('field1') field1: string,
 		@BodyField('undefinedField') field2: string | undefined
 	) {
-		return new Message({
-			gotBody: body,
-			field1: field1,
-			field2: field2,
-			param: noParam,
-		});
+		return new WithBodyTestView(body, field1, field2, noParam);
+	}
+
+	@Get('/plain-text')
+	public async getPlainText(): Promise<string> {
+		return 'plaintext string';
 	}
 }
 
 class CustomErrorHandler implements ExpressErrorHandler {
 	handle(err: Error, req: Request, res: Response): void {
 		res.send({ message: err.message });
+	}
+}
+
+class CustomVerboseErrorHandler implements ExpressErrorHandler {
+	handle(err: Error, req: Request, res: Response): void {
+		res.send({ message: err.message, error: err });
 	}
 }
 
@@ -312,10 +384,23 @@ describe('Testing parameter binding and middlewares running', () => {
 		let res = await supertest(appInstance.getExpressApp())
 			.post('/my-route/with-body')
 			.set('Content-Type', 'application/json');
+
 		expect(res.status).toBe(200);
 		expect(res.body.field1).toBeUndefined();
 		expect(res.body.field2).toBeUndefined();
 		expect(res.body.param).toBeUndefined();
+	});
+
+	it('Should return a plain text with default content type as plain/text and status code 200', async () => {
+		appInstance.errorHandler = new CustomVerboseErrorHandler();
+
+		let res = await supertest(appInstance.getExpressApp()).get(
+			'/my-route/plain-text'
+		);
+
+		expect(res.status).toBe(200);
+		expect(res.header['content-type']).toContain('text/plain');
+		expect(res.text).toEqual('plaintext string');
 	});
 
 	it('Should stop', async () => {

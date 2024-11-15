@@ -14,10 +14,18 @@
  * limitations under the License.
  */
 
-export type MessageType =
-	| 'application/json'
-	| 'image/jpeg'
-	| 'text/html'
-	| 'text/css'
-	| 'text/javascript'
-	| 'text/plain';
+import { MessageType } from '../ExchangeUtils/Message';
+import { Constructable } from '../Utils/Constructable';
+
+export const HTTP_CONTENT_TYPE_METADATA_KEY = Symbol('cream:http:content-type');
+
+export function ContentType<T extends Constructable>(contentType: MessageType) {
+	return function (target: T): T {
+		Reflect.defineMetadata(
+			HTTP_CONTENT_TYPE_METADATA_KEY,
+			contentType,
+			target.prototype
+		);
+		return target;
+	};
+}

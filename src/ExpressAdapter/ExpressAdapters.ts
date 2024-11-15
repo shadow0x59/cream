@@ -18,7 +18,6 @@ import 'reflect-metadata';
 
 import { NextFunction, Response } from 'express';
 
-import { Message } from '../ExchangeUtils/Message';
 import { RestError } from '../ExpressErrorHandler/ExpressErrorHandler';
 import {
 	ExtendedRequest,
@@ -31,6 +30,10 @@ import { Route, Routes, ROUTES_METADATA_KEY } from '../HttpUtils/Route';
 
 import { ExpressModule } from './ExpressModule';
 import { ParameterProp, ParameterProps } from './ParameterProp';
+import { BootstrapSerializer } from '../Serializer/ExpressSerializer';
+import { HTTP_CODE_METADATA_KEY } from '../HttpUtils/HttpReturnCode';
+import { HTTP_CONTENT_TYPE_METADATA_KEY } from '../HttpUtils/ContentType';
+import { MessageType } from '../ExchangeUtils/Message';
 
 export const BODY_METADATA_KEY = Symbol('express:bodyAssoc');
 export const PARAMS_METADATA_KEY = Symbol('express:paramAssoc');
@@ -39,7 +42,7 @@ export const MIDDLEWARE_METADATA_KEY = Symbol('express:middlewareAssoc');
 
 export function ExpressCall<T extends ExpressModule>(
 	relativePath: string,
-	httpMethod: HttpMethod = HttpMethod.GET
+	httpMethod: HttpMethod
 ) {
 	return function (
 		target: T,
@@ -121,13 +124,35 @@ export function ExpressCall<T extends ExpressModule>(
 				}
 
 				try {
-					let result = (await method.apply(thisArg, args)) as Message;
-					res.status(result.status || 200);
-					res.set(
-						'Content-Type',
-						result.contentType || 'application/json'
-					);
-					res.send(result.content);
+					let bootstrapSerializer = new BootstrapSerializer();
+					let result = await method.apply(thisArg, args);
+					let data = await bootstrapSerializer.start(result);
+
+					let status = 200;
+					try {
+						status =
+							Reflect.getMetadata(
+								HTTP_CODE_METADATA_KEY,
+								result
+							) || status;
+					} catch (e) {
+						/* do nothing */
+					}
+
+					let contentType: MessageType = 'text/plain';
+					try {
+						contentType =
+							(Reflect.getMetadata(
+								HTTP_CONTENT_TYPE_METADATA_KEY,
+								result
+							) as MessageType) || contentType;
+					} catch (e) {
+						/* Do nothing */
+					}
+
+					res.set('Content-Type', contentType)
+						.status(status)
+						.send(data);
 				} catch (e) {
 					if (e instanceof RestError) {
 						res.status((e as RestError).statusCode);

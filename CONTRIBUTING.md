@@ -12,7 +12,7 @@ There will be three contribution Tiers:
 
 ## First Steps
 
-In order to directly contribute you have two options:
+In order to directly contribute (aka write/edit/delete code) you have two options:
 
 1. Contact Me to be part of the dev team (but this won't be active till I decide so)
 2. Create a fork then create a Merge Request so I can checkout the code

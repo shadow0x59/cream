@@ -31,7 +31,7 @@ export {
 	ErrorInfo,
 	ExpressErrorHandler,
 } from './ExpressErrorHandler/ExpressErrorHandler';
-export { Message, MessageType } from './ExchangeUtils/Message';
+export { MessageType } from './ExchangeUtils/Message';
 export { ExpressApplication } from './ExpressApplication';
 export {
 	ExpressMiddleware,
@@ -39,6 +39,7 @@ export {
 	MiddlewareDataCollection,
 	MiddlewareDataCollections,
 	MiddlewareReturnData,
+	ExtendedRequest,
 } from './ExpressMiddleware/ExpressMiddleware';
 export { MiddlewareData } from './ExpressMiddleware/MiddlewareData';
 export {
@@ -52,3 +53,14 @@ export {
 } from './ExpressService/ExpressService';
 
 export { HttpMethod } from './HttpUtils/HttpMethod';
+export { HttpReturnCode } from './HttpUtils/HttpReturnCode';
+export { ContentType } from './HttpUtils/ContentType';
+
+export {
+	Serializer,
+	BootstrapSerializer,
+} from './Serializer/ExpressSerializer';
+export { CreamSerializers } from './Serializer/CommonSerializers';
+export { Serializable, AutoMap, MapTo } from './Serializer/Serializable';
+export { Meta, SerializerMetaInfo } from './Serializer/SerializerMetaInfo';
+export { JSONSerializableArray } from './Serializer/SerializableDataStructures';
