@@ -7,13 +7,13 @@ It wasn't tested on plain JS.
 
 If express is not installed:
 
-```npm
+```bash
 npm install express @types/express @creamapi/cream
 ```
 
 If you've already installed expreess:
 
-```npm
+```bash
 npm install @creamapi/cream
 ```
 
