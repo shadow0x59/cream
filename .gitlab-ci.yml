@@ -66,7 +66,7 @@ lint-test-job: # This job also runs in the test stage.
 pages-test:
     stage: test
     script:
-        - npx typedoc --out test-pages
+        - npx typedoc src/index.ts --out test-pages
     artifacts:
         when: on_success
         access: all
@@ -79,7 +79,7 @@ pages-test:
 pages:
     stage: deploy
     script:
-        - npx typedoc --out public
+        - npx typedoc src/index.ts --out public
     artifacts:
         paths:
             - public
