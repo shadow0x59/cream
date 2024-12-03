@@ -17,8 +17,25 @@
 import { Serializer, SerialBite, SerializerCommon } from './ExpressSerializer';
 import { SerializerMetaInfo } from './SerializerMetaInfo';
 
+/**
+ * In this namespace you can find common serializers defined by
+ * Cream
+ */
 export namespace CreamSerializers {
+	/**
+	 * This serializer serialize objects to JSON notation
+	 * It does not serialize methods, only attributes
+	 * @remarks circular dependencies are not checked yet and this can
+	 * cause a serious issue with your code.
+	 */
 	export class JSON extends Serializer {
+		/**
+		 * This method takes a number as input and returns a string corresponding to that number
+		 * it just uses {@link Number.toString} under the hood
+		 * @param _dataLabel **ignored**
+		 * @param num The number to be serialized
+		 * @returns a string representing the number num in json format
+		 */
 		async serializeNumber(
 			_dataLabel: string,
 			num: number
@@ -26,6 +43,12 @@ export namespace CreamSerializers {
 			return Number(num).toString();
 		}
 
+		/**
+		 * This method just adds one quota at the beginning and one at the end of the string
+		 * @param _dataLabel **ignored**
+		 * @param data The string to be serialized
+		 * @returns a string representing the string data in json format
+		 */
 		async serializeString(
 			_dataLabel: string,
 			data: string
@@ -33,6 +56,12 @@ export namespace CreamSerializers {
 			return '"' + data + '"';
 		}
 
+		/**
+		 * This method returns the string equivalent of the boolean values true/false in the JSON format
+		 * @param _dataLabel **ignored**
+		 * @param data the boolean data to be serialized
+		 * @returns the string equivalent in JSON format of data
+		 */
 		async serializeBoolean(
 			_dataLabel: string,
 			data: boolean
@@ -40,10 +69,31 @@ export namespace CreamSerializers {
 			return data ? 'true' : 'false';
 		}
 
+		/**
+		 * This method is called when a null valued attribute is found.
+		 * @remarks Beware that this doesn't mean that the value was undefined, but rather that
+		 * the attribute exists but it is null, with not a value.\
+		 * For further information about the difference between undefined and null
+		 * you should look in the JavaScript documentation.
+		 * @param _dataLabel **ignored**
+		 * @returns 'null'
+		 */
 		async serializeNull(_dataLabel: string): Promise<string> {
 			return 'null';
 		}
 
+		/**
+		 * This method will do the job of serializing the input
+		 * object that is automatically converted to a stream.\
+		 * @remarks The stream order is top-down from class notation,
+		 * so the first attribute found in the class will be the first
+		 * to be inserted in the serialStream
+		 * @param _serializedObjectName - **ignored**
+		 * @param serialStream - the input stream the object to be serialized was sliced to by the {@link Serializer.serialize} method
+		 * @param metaInfo - additional meta information about how to handle the object. These attributes were defined
+		 * by {@link Meta} or by the {@link Serializer.serialize} method
+		 * @returns a string representing the serialized version of the stream in JSON format
+		 */
 		async handleSerializationStream(
 			_serializedObjectName: string,
 			serialStream: SerialBite[],
@@ -56,20 +106,37 @@ export namespace CreamSerializers {
 			return this.serializeObject(serialStream);
 		}
 
+		/**
+		 * This method serializes array-like objects previously identified by
+		 * the {@link Serializer.serialize} method.
+		 * @param serialStream - the serial stream of the array. each object is one object of the array
+		 * SerialBite.dataLabel will be the index of the object
+		 * @returns the string corresponding to the array. If the array is empty it will return a '[]'
+		 * representing the empty array in JSON
+		 */
 		async serializeArray(serialStream: SerialBite[]): Promise<string> {
+			if (serialStream.length == 0) return '[]';
+
 			let outStream = '[';
 			for (let elem of serialStream) {
 				outStream +=
 					(await this.serialize(elem.dataLabel, elem.data)) + ',';
 			}
-			if (outStream.endsWith(',')) {
-				return outStream.slice(0, outStream.length - 1) + ']';
-			} else {
-				return outStream + ']';
-			}
+
+			return outStream.slice(0, outStream.length - 1) + ']';
 		}
 
+		/**
+		 * This method is used to serialize a stream that contains object-like data
+		 * {@link SerialBite.dataLabel} will contain either the attribute name or the alternative
+		 * given by the {@link MapTo} decorator. This is not an issue because a reference to
+		 * the actual field is held in {@link SerialBite.data}
+		 * @param serialStream - the array of SerialBites representing the object
+		 * @returns the string representing the serialStream in JSON format
+		 */
 		async serializeObject(serialStream: SerialBite[]): Promise<string> {
+			if (serialStream.length == 0) return '{}';
+
 			let outStream = '{';
 			for (let elem of serialStream) {
 				if (elem.data !== undefined) {
@@ -82,14 +149,16 @@ export namespace CreamSerializers {
 				}
 			}
 
-			if (outStream.endsWith(',')) {
-				return outStream.slice(0, outStream.length - 1) + '}';
-			}
-
-			return outStream + '}';
+			return outStream.slice(0, outStream.length - 1) + '}';
 		}
 	}
 
+	/**
+	 * @experimental
+	 * This class will act as a serializer to XML format.
+	 * This is still experimental and it is not yet suggested for
+	 * extensive use. Any help on its enhancement is welcome!
+	 */
 	export class XML extends Serializer {
 		public static Attribute: string = 'xml:attribute';
 		public static Text: string = 'xml:text';

@@ -1,3 +1,12 @@
+![GitLab License](https://img.shields.io/gitlab/license/worklog1%2Fcream)
+![Gitlab Pipeline Status](https://img.shields.io/gitlab/pipeline-status/worklog1%2Fcream?branch=master)
+![NPM Downloads](https://img.shields.io/npm/dy/%40creamapi%2Fcream)
+![GitLab Issues](https://img.shields.io/gitlab/issues/open/worklog1%2Fcream)
+![GitLab Contributors](https://img.shields.io/gitlab/contributors/worklog1%2Fcream)
+![NPM Version](https://img.shields.io/npm/v/%40creamapi%2Fcream)
+
+<a href="https://www.buymeacoffee.com/shadow0x59" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-violet.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 115px !important; height: 30px !important;" ></a>
+
 # Cream - A Library For Semi-Declarative REST API Creation
 
 Cream stands for Concise REST API Maker and it is a ExpressJS extension mainly targeting TypeScript builds.
@@ -7,13 +16,13 @@ It wasn't tested on plain JS.
 
 If express is not installed:
 
-```npm
+```bash
 npm install express @types/express @creamapi/cream
 ```
 
 If you've already installed expreess:
 
-```npm
+```bash
 npm install @creamapi/cream
 ```
 
@@ -84,7 +93,7 @@ class MyCustomApplication extends ExpressApplication {
 	public constructor() {
 		let expressApp = express();
 		/*
-			here you can use any express middleware like cors, json, bodyParser
+			here you can use any express middleware like cors, json,   bodyParser, morgan, etc.
 		*/
 		expressApp.use(express.json());
 
@@ -108,7 +117,7 @@ Now if we go to https://localhost:4040/hello-world we will see
 Sending a string to the browser is cool, but REST APIs are more complex than this.  
 They can receive data as a request and give a complex response, like a JSON text.
 
-## Handling data coming from the client
+### Handling data coming from the client
 
 Let's reuse the last example, but this time we want to get a string from the client and write it on the screen. For this example, to keep it simple, we will use a Get request again, but this time we will use a UrlParameter to retrive the data.  
 What does it mean? It means that when the user makes a request to http://localhost:4040/hello-world/\<data\> we want to get the value of \<data\> and write it back to the user.  
@@ -131,7 +140,7 @@ export class HelloController extends ExpressModule {
 Now if we try to go to http://localhost:4040/hello-world/my%20hello we will see
 `my hello` written in our browser!
 
-## Returning complex objects
+### Returning complex objects
 
 Now we want to return a json object containing both our string and its length. To do so we must create a custom class that contains such data and tell cream that we want to serialize it to JSON. We can do it like this:
 
@@ -152,13 +161,16 @@ import {
 @Serializable(CreamSerializers.JSON)
 class HelloView {
 	@AutoMap
-	stringLength: number;
+	get stringLength(): number {
+		return this.stringData.length;
+	}
 
 	@MapTo('userData')
-	stringData: string;
+	public stringData: string;
+
+	otherData: number;
 
 	constructor(userString) {
-		this.stringLength = stringData.length;
 		this.stringData = stringData;
 	}
 }
@@ -168,7 +180,13 @@ Here we can see that we tell cream that HelloView is serializable by a JSON seri
 
 We also see AutoMap and MapTo, these two decorators are used to declare which fields are serialized.
 
+> Non-decorated fields, like otherData, are not serialized by default.  
+> This behaviov is helpful to prevent unwanted dataleaks. With a serialize
+> all by default behavior a secure field can be leaked, for example the user's password.
+
 > The difference between MapTo and AutoMap is that MapTo allows us to specify the name of the field whilst AutoMap will take the name of the decorated attribute.
+
+We can see that we can also serialize getters. This allows us to compute dynamically stuff when the object is serializable. Also, `this` correctly points to the correct object.
 
 Now we want to use our custom data. As before let's reuse the last example as a base:
 
@@ -190,14 +208,14 @@ Now if we go again to http://localhost:4040/hello-world/my%20hello we will not s
 
 ```json
 {
-	"userData": "my hello",
-	"stringLength": 8
+	"stringLength": 8,
+	"userData": "my hello"
 }
 ```
 
 ## Continuing
 
-To expand our REST API we also need to receive more complex data from the user, but this topic, how to handle different HTTP requests, is covered in the [User Guide]().
+To expand our REST API we also need to receive more complex data from the user, but this topic, how to handle different HTTP requests, is covered in the [User Guide](public/index.html).
 
 # Comparing it with Express
 

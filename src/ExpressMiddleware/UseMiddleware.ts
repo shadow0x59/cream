@@ -20,6 +20,12 @@ import { Route, Routes, ROUTES_METADATA_KEY } from '../HttpUtils/Route';
 import { BaseMiddleware, BaseMiddlewares } from './ExpressMiddleware';
 import { ExpressModule } from '../ExpressAdapter/ExpressModule';
 
+/**
+ * This decorator is used to create a stack of middlewares for a controller. <br>
+ * This stack of middlewares is applied to all ExpressCalls in the controller
+ * @param middlewares the middlewares that should be called before calling the endpoint
+ * @returns a class that extends the target class and will initialize the middlewares
+ */
 export function UseMiddlewaresForController<
 	T extends { new (...args: any[]): ExpressModule },
 >(middlewares: BaseMiddlewares) {
@@ -32,6 +38,13 @@ export function UseMiddlewaresForController<
 	};
 }
 
+/**
+ * This decorator is used to push to the middleware stack a new middleware for the <br>
+ * decorated ExpressCall. Middlewares pushed with this decorator will be executed with <br>
+ * a top-down approach (like a stack)
+ * @param middleware the middleware that should be pushed to the stack
+ * @returns the actual decorator
+ */
 export function UseMiddleware<T extends BaseMiddleware>(middleware: T) {
 	return function (
 		target: ExpressModule,

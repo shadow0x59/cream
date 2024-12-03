@@ -17,6 +17,9 @@
 import { Serializable } from './Serializable';
 import { CreamSerializers } from './CommonSerializers';
 
+/**
+ * A common definition for a top level serializable aray
+ */
 @Serializable(CreamSerializers.JSON)
 export class JSONSerializableArray<T> extends Array<T> {
 	constructor(array: T[]) {

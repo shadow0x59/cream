@@ -18,12 +18,44 @@ import { Router } from 'express';
 import { BaseMiddlewares } from '../ExpressMiddleware/ExpressMiddleware';
 import { ExpressApplication } from '../ExpressApplication';
 
+/**
+ * This class is just a way to allow to explicitly declare
+ * that the class inheriting ExpressModule is a controller.
+ * This is because {@link ExpressController} decorates only
+ * **ExpressModules** and defines some fields that are used by
+ * the ExpressApplication to handle requests and define endpoints.
+ * Also it gives an interface for accessing the express application
+ * handling the class easily (by using ExpressModule.app)
+ */
 export class ExpressModule {
+	/**
+	 * This allows to access the express router that will handle
+	 * the requests. This router will be registered to the
+	 * {@link ExpressApplication} that will be defined in {@link ExpressModule.app}
+	 */
 	public accessor router: Router;
+
+	/**
+	 * This is the basepoint to which the controller is bound to
+	 */
 	public accessor baseUrl: string;
+
+	/**
+	 * This is used to keep the information about the class
+	 * that will inherit the ExpressModule and that will be
+	 * decorated by {@link ExpressController}
+	 */
 	public accessor className: string;
+
+	/**
+	 * The {@link ExpressApplication} the controller is registered to
+	 */
 	private _app!: ExpressApplication;
 
+	/**
+	 * @param middlewareList The list of  controller-wise middlewares associated
+	 * with the controller. The method-associated middlewares will not appear in this list
+	 */
 	constructor(public middlewareList: BaseMiddlewares = []) {
 		this.router = Router();
 		this.baseUrl = '/';
