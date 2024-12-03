@@ -5,7 +5,7 @@
 ![GitLab Contributors](https://img.shields.io/gitlab/contributors/worklog1%2Fcream)
 ![NPM Version](https://img.shields.io/npm/v/%40creamapi%2Fcream)
 
-<a href="https://www.buymeacoffee.com/shadow0x59" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-violet.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 115px !important; height: 30px !important;" ></a>
+<a href="https://www.buymeacoffee.com/shadow0x59" target="_blank"><img heigth="60" src="https://cdn.buymeacoffee.com/buttons/v2/default-violet.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 115px !important; height: 30px !important;" ></a>
 
 # Cream - A Library For Semi-Declarative REST API Creation
 
@@ -31,6 +31,10 @@ npm install @creamapi/cream
 > Note: These examples use TypeScript, in order to follow them please setup a TS project.
 
 To create your own API with Cream it is easy! You just need to setup a few things then you can play with it with ease.
+
+## Documentation
+
+For full API documentation follow this link: [Cream API Documentation](https://worklog1.gitlab.io/cream/).
 
 ## First Steps
 
