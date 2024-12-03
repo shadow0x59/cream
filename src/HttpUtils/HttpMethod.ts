@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+/**
+ * A simple enumerator of supported HTTP methods
+ */
 export enum HttpMethod {
 	GET = 'GET',
 	POST = 'POST',

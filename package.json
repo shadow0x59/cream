@@ -5,11 +5,13 @@
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
 	"directories": {
-		"doc": "docs"
+		"doc": "public"
 	},
 	"scripts": {
 		"build": "tsc",
-		"test": "jest"
+		"docs": "typedoc src/index.ts --out public",
+		"test": "jest",
+		"deploy": "npm run build && npm publish"
 	},
 	"repository": {
 		"type": "git",
@@ -26,11 +28,11 @@
 		"typescript"
 	],
 	"author": "Raul Radu",
-	"license": "SEE LICENSE IN LICENSE",
+	"license": "Apache-2.0",
 	"bugs": {
-		"url": "https://gitlab.com/worklog1/express-utils/issues"
+		"url": "https://gitlab.com/worklog1/cream/issues"
 	},
-	"homepage": "https://gitlab.com/worklog1/express-utils#readme",
+	"homepage": "https://gitlab.com/worklog1/cream/public",
 	"devDependencies": {
 		"@types/express": "^5.0.0",
 		"@types/jest": "^29.5.14",
@@ -41,6 +43,7 @@
 		"prettier": "3.3.3",
 		"supertest": "^7.0.0",
 		"ts-jest": "^29.2.5",
+		"typedoc": "^0.26.11",
 		"typescript": "^5.6.3"
 	},
 	"dependencies": {

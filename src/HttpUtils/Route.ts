@@ -23,17 +23,40 @@ import {
 import { HttpMethod } from './HttpMethod';
 import { ExpressModule } from '../ExpressAdapter/ExpressModule';
 
+/**
+ * @internal
+ * a type to define express-like functions
+ */
 export type ExpressFunction = (
 	req: ExtendedRequest,
 	res: Response,
 	next: NextFunction
 ) => Promise<void>;
 
+/**
+ * @internal
+ * This type defines a method that creates
+ * a method of type ExpressFunction based on ExpressModule
+ */
 export type ExpressFunctionFactory = (
 	thisArg: ExpressModule
 ) => ExpressFunction;
 
+/**
+ * @internal
+ * This class represents the route associated with a ExpressCall.
+ * it is used to map endpoints to Express Functions that will
+ * map parameters to the target method and then call the method.
+ */
 export class Route {
+	/**
+	 *
+	 * @param route The route of the ExpressCall decorated method. It is relative to the base path of the ExpressController
+	 * @param method The function that will handle the request and then call the class method with the correct bounded "this"
+	 * @param methodName the original method name
+	 * @param httpMethod the http method associated with the ExpressCall decorated module
+	 * @param middlewares the stack of middleware that should be called before param method
+	 */
 	constructor(
 		public route: string,
 		public method: ExpressFunctionFactory,

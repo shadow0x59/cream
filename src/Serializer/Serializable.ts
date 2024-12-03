@@ -25,6 +25,12 @@ export type SerialMap = {
 	outName: string;
 };
 
+/**
+ * Declares a class to be serialized and also declares the serializer that
+ * should be used to serialize the decorated class
+ * @param serializer the Serializer that should be used
+ * @returns the decorator that will decorate the class
+ */
 export function Serializable<T extends Constructable>(
 	serializer: Constructable<Serializer>
 ) {
@@ -38,10 +44,24 @@ export function Serializable<T extends Constructable>(
 	};
 }
 
+/**
+ * This method is used to declare a field serializable
+ * and it will also get the name of the field automatically
+ * @param target the target class attribute
+ * @param propertyName the name of the class attribute
+ * @returns the decorator that will handle the mapping for serialization
+ */
 export function AutoMap(target: any, propertyName: string) {
 	return MapTo(propertyName)(target, propertyName);
 }
 
+/**
+ * This method is used to declare a field serializable
+ * and it will also get the name of the field automatically but it will
+ * map to a different name declared by the user
+ * @param name the new name of the field in the serialized object
+ * @returns the decorator that will handle the mapping for serialization
+ */
 export function MapTo(name: string) {
 	return function (target: any, propertyName: string) {
 		let serialMap: SerialMap[] =

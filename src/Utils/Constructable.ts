@@ -14,6 +14,15 @@
  * limitations under the License.
  */
 
+/**
+ * @internal
+ * This type is used for identifying objects that implement the new function
+ * in their prototype. This is useful to identify constructable objects
+ */
 export type Constructable<T = {}> = { new (...args: any): T };
 
+/**
+ * @internal
+ * It is just an array of type Constructable<T>
+ */
 export type Constructables<T = {}> = Constructable<T>[];

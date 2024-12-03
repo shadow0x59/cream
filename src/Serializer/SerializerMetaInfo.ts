@@ -18,6 +18,12 @@ export const SERIALIZER_META_INFO_METADATA_KEY = Symbol(
 	'cream:data-serializer'
 );
 
+/**
+ * @internal
+ * This class is used to store meta information for
+ * the serializers that will be used to make decisions
+ * when serializing objects
+ */
 export class SerializerMetaInfo {
 	private attributes: string[] = [];
 
@@ -30,6 +36,14 @@ export class SerializerMetaInfo {
 	}
 }
 
+/**
+ * Defines a metadata for the attribute that can be used by
+ * serializers to make decisions on serialization.
+ * @example the XML serializer uses the attribute AutoIndex to automatically
+ * add the index of the element as the attribute index in the xml tag
+ * @param attribute the attribute that should be defined
+ * @returns the decorator that will decorate the attribute
+ */
 export function Meta(attribute: string) {
 	return function (target: any, propertyName: string) {
 		let metaInfo: SerializerMetaInfo =

@@ -45,7 +45,7 @@ export interface ErrorInfo {
  */
 export interface ExpressErrorHandler {
 	/**
-	 * @description This method is called whenever an exception is thrown
+	 * This method is called whenever an exception is thrown
 	 *
 	 */
 	handle(err: Error, req: Request, res: Response): void;

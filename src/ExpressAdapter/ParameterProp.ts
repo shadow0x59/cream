@@ -14,7 +14,18 @@
  * limitations under the License.
  */
 
+/**
+ * This class is used to defined meta information about
+ * method parameters.
+ * It is used to define bindings between the target method
+ * and the data source (for example headers, body, ecc.)
+ */
 export class ParameterProp {
+	/**
+	 *
+	 * @param index the index of the parameter in the function call
+	 * @param name the name of the parameter in the resource data structure
+	 */
 	constructor(
 		public index: number,
 		public name: string

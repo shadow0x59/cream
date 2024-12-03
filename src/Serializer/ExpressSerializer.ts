@@ -26,21 +26,62 @@ import {
 	SerializerMetaInfo,
 } from './SerializerMetaInfo';
 
+/**
+ * @internal
+ * Defines the base types that should be serialized
+ */
 type BaseSerializable = {} | string | number | boolean;
 
+/**
+ * @internal
+ * This type defines the unit of data that
+ * should be serialized
+ */
 export type SerialBite = {
+	/**
+	 * the data that should be serialized
+	 */
 	data: BaseSerializable;
+
+	/**
+	 * The label that should be used when serializing
+	 * aka the output name
+	 */
 	dataLabel: string;
+
+	/**
+	 * Additional meta information that can be
+	 * used by serializers when serializing objects
+	 */
 	metaInfo: SerializerMetaInfo | undefined;
 };
 
+/**
+ * This namespace defines Common information
+ * for serializers
+ */
 export namespace SerializerCommon {
+	/**
+	 * This namespace defines the common attributes to all serializers
+	 */
 	export namespace Attributes {
+		/**
+		 * This attribute is used to declare an object as an array
+		 */
 		export const Array: string = 'common:array';
+
+		/**
+		 * This attribute is used to automatically serialize everything in the object
+		 */
 		export const AutoSerialize: string = 'common:autoserialize';
 	}
 }
 
+/**
+ * This base class that implements the complex logic for handling
+ * serialization of objects. It gives a framework to easily implement
+ * complex serializers.
+ */
 export abstract class Serializer {
 	private targetName: string;
 	private contextStack: object[] = [];
@@ -67,6 +108,12 @@ export abstract class Serializer {
 
 	abstract serializeNull(dataLabel: string): Promise<string>;
 
+	/**
+	 * This method is used to serialize a piece of data
+	 * @param dataLabel the label of the data
+	 * @param data the actual data
+	 * @returns a string representing the serialized object
+	 */
 	public async serialize(dataLabel: string, data: any): Promise<String> {
 		if (typeof data === 'number') {
 			return this.serializeNumber(dataLabel, data);
@@ -85,6 +132,13 @@ export abstract class Serializer {
 		return this.serializeAnyObject(dataLabel, data);
 	}
 
+	/**
+	 * This method is used to serialize anything that is not
+	 * a base type
+	 * @param dataLabel the data label that should be used when rendering
+	 * @param data the data that should be serialized
+	 * @returns the string representing the serialized object
+	 */
 	private async serializeAnyObject(
 		dataLabel: string,
 		data: Object
@@ -135,19 +189,37 @@ export abstract class Serializer {
 		return outStream;
 	}
 
+	/**
+	 * Gets the current context
+	 * @returns the current context
+	 */
 	private getContext(): Object {
 		if (this.contextStack.length == 0) return {};
 		return this.contextStack[this.contextStack.length - 1];
 	}
 
+	/**
+	 * removes the current context from the stack
+	 */
 	private popContext() {
 		this.contextStack.pop();
 	}
 
+	/**
+	 * This is used to push a context to the stack.
+	 * This context is used to infer data ownership
+	 * @param context the context that should be pushed
+	 */
 	private pushContext(context: Object) {
 		this.contextStack.push(context);
 	}
 
+	/**
+	 * This static method makes any object serializable by iterating through the object
+	 * this can break when recursive references are taken in place
+	 * @param data the data to be serialized
+	 * @returns the decorated data
+	 */
 	public static makeSerializable(data: any) {
 		for (let key in data) {
 			AutoMap(data, key);
@@ -156,6 +228,13 @@ export abstract class Serializer {
 		return data;
 	}
 
+	/**
+	 * This method is called before handling a custom object
+	 * @param dataLabel the label of the object
+	 * @param data the object
+	 * @param metaInfo  any information useful for serialization
+	 * @returns a string that should be appended before the serialization of the object
+	 */
 	public async preObject(
 		dataLabel: string,
 		data: SerialBite[],
@@ -164,6 +243,13 @@ export abstract class Serializer {
 		return '';
 	}
 
+	/**
+	 * This method is called after handling a custom object
+	 * @param dataLabel the label of the object
+	 * @param data the object
+	 * @param metaInfo  any information useful for serialization
+	 * @returns a string that should be appended after the serialization of the object
+	 */
 	public async postObject(
 		dataLabel: string,
 		data: SerialBite[],
@@ -172,10 +258,21 @@ export abstract class Serializer {
 		return '';
 	}
 
+	/**
+	 * This method checks if the provided data is an array
+	 * @param data the data to be checked
+	 * @returns true if data is array, false otherwise
+	 */
 	private dataIsArray(data: Object): boolean {
 		return data.hasOwnProperty('length');
 	}
 
+	/**
+	 * This method is used to create a serialization of
+	 * the array in data by putting the index as the
+	 * field name
+	 * @param data the array that should be mapped
+	 */
 	private autoMapArray(data: any[]): void {
 		let serialMap: SerialMap[] = [];
 
@@ -189,6 +286,11 @@ export abstract class Serializer {
 		Reflect.defineMetadata(SERIAL_MAP_METADATA_KEY, serialMap, data);
 	}
 
+	/**
+	 * This method is used to streamify the data from the object given as input
+	 * @param data the data that should be streamified
+	 * @returns the stream of SerialBites that will be later handled by the serializer
+	 */
 	private streamify(data: Object): SerialBite[] {
 		let streamBuffer: SerialBite[] = [];
 
@@ -216,6 +318,12 @@ export abstract class Serializer {
 		return streamBuffer;
 	}
 
+	/**
+	 * This method will return meta information for the current context based on the
+	 * dataLabel
+	 * @param dataLabel the name of the field that the metadata should be retrieved from
+	 * @returns the metadata associated with the dataLabel
+	 */
 	private fetchMetaInfoForObject(dataLabel: string): SerializerMetaInfo {
 		let serialMap: SerialMap[] | undefined = Reflect.getMetadata(
 			SERIAL_MAP_METADATA_KEY,
@@ -237,7 +345,10 @@ export abstract class Serializer {
 }
 
 /**
+ * @internal
  * This class is only used to bootstrap serialization
+ * It will also handle base types when no complex object is returned
+ * The serialization of those types is language agnostic
  */
 export class BootstrapSerializer extends Serializer {
 	async serializeNull(_dataLabel: string): Promise<string> {

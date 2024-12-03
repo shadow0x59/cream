@@ -17,7 +17,19 @@
 import { ParameterProp } from '../ExpressAdapter/ParameterProp';
 import { MIDDLEWARE_METADATA_KEY } from '../ExpressAdapter/ExpressAdapters';
 
+/**
+ * @internal
+ * This class is used to define parameter prop for middleware data
+ * This is used to map parameters to the data in a middleware collection
+ */
 export class MiddlewareParameterProp extends ParameterProp {
+	/**
+	 * @param index the index of the parameter in the parameter call array
+	 * @param name The name of the parameter in the data collection
+	 * @param collection The collection that the data should be retrieved from
+	 *
+	 * @remarks The data is accessed like collection[name]
+	 */
 	constructor(
 		index: number,
 		name: string,
@@ -27,11 +39,23 @@ export class MiddlewareParameterProp extends ParameterProp {
 	}
 }
 
+/**
+ * @internal
+ * a type for easily defining arrays
+ */
 export type MiddlewareParameterProps = MiddlewareParameterProp[];
 
+/**
+ * This decorator factory is used to declare that a parameter of a method should be filled <br>
+ * from the collection `collectionName`. The parameter will be filled either with the data or <br>
+ * undefined if the data is not found in the collection or the collection is not found in the map
+ * @param collectionName The collection the data should be retrieved from. The default collection name is 'default'
+ * @param dataName the name of the field in the collection. To retrieve the entire collection the string "*" is used.
+ * @returns the decorator that will effectively decorate the method
+ */
 export function MiddlewareData(
 	collectionName: string = 'default',
-	dataName: string = '$'
+	dataName: string = '*'
 ) {
 	return function (
 		target: Object,

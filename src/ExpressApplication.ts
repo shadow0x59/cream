@@ -25,15 +25,66 @@ import {
 
 import { Server } from 'http';
 
+/**
+ * This type is just for expressivity to identify
+ * the purpose of any variable that will handle controllers
+ */
 type ControllerMap<T> = Map<string, T>;
+
+/**
+ * This type is just for expressivity to identify
+ * the purpose of any variable that will handle services
+ */
 type ServiceMap<T> = ControllerMap<T>;
 
+/**
+ * This class is the main class for your Cream-based REST API
+ * It will handle controllers, services and will communicate with
+ * express for you.
+ *
+ * @example To use it you can either extend from it or create a new object
+ * ```ts
+ * import express from "express";
+ * import { ExpressApplication } from "@creamapi/cream";
+ *
+ * let expressApp = express();
+ * expressApp.use(express.json());
+ * let app = new ExpressApplication(expressApp, 4040);
+ * app.addControllers([<add your controller here>]);
+ * app.start();
+ * ```
+ */
 export class ExpressApplication {
+	/**
+	 * The map of active and registered controllers.
+	 * The key will be the name of the controller.
+	 * By this I mean the literal class name.
+	 * Only objects that extend ExpressModule can be
+	 * used as a controller
+	 */
 	private controllers: ControllerMap<ExpressModule>;
+
+	/**
+	 * The map of active and registered services.
+	 * The key will be the id given to the service when describing it.
+	 */
 	private services: ServiceMap<ExpressService>;
+
+	/**
+	 * The port to which the server will be bounded to.
+	 */
 	private port: number;
+
+	/**
+	 * The server instance given by the express API
+	 */
 	private server?: Server;
 
+	/**
+	 * @param app is the express application that will handle the requests.
+	 * @param port is the port that the server will be bound to
+	 * @param _errorHandler is you custom implementation of the error handler that extends ExpressErrorHandler
+	 */
 	constructor(
 		private app: Express,
 		port: number,
@@ -44,6 +95,9 @@ export class ExpressApplication {
 		this.services = new Map();
 	}
 
+	/**
+	 * This attribute setter allows for setting a new custom error handler
+	 */
 	set errorHandler(v: ExpressErrorHandler) {
 		this._errorHandler = v;
 	}
@@ -191,7 +245,12 @@ export class ExpressApplication {
 		});
 	}
 
-	public stop(): Promise<void> {
+	/**
+	 * This function is used to stop the server on purpose
+	 * @returns void
+	 * @throws any generated error by Server.close
+	 */
+	public async stop(): Promise<void> {
 		return new Promise<void>((resolve, reject) => {
 			this.server!.close(async (err) => {
 				if (err) {
@@ -202,10 +261,22 @@ export class ExpressApplication {
 		});
 	}
 
+	/**
+	 * @returns the active express application
+	 */
 	public getExpressApp(): Express {
 		return this.app;
 	}
 
+	/**
+	 * This method is used when we want to retreive a shared service
+	 * within a controller. This is useful for example when we want to share
+	 * user data among the services but we don't want to access the database
+	 * everytime so a runtime service that is synced with the DB but caches data
+	 * locally can be used.
+	 * @param serviceId the service identifier that is given with IdentifiedBy decorator
+	 * @returns the requested service or undefined if the service was not found
+	 */
 	public getService<T extends ExpressService>(serviceId: string) {
 		return this.services.get(serviceId) as T;
 	}
