@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+/**
+ * This is a collection of mime types and should be updgraded
+ * or better deduced from another existing type
+ */
 export type MessageType =
 	| 'application/json'
 	| 'image/jpeg'

@@ -18,6 +18,13 @@ import { Constructable } from '../Utils/Constructable';
 
 export const HTTP_CODE_METADATA_KEY = Symbol('cream:http:return-code');
 
+/**
+ * This decorator is used to decorate a class to add information about
+ * the return code that should be sent to the user when the target is serialized
+ * or in general returned from an ExpressCall
+ * @param code the code that should be returned to the user
+ * @returns the decorator of the function
+ */
 export function HttpReturnCode<T extends Constructable>(code: number) {
 	return function (target: T): T {
 		Reflect.defineMetadata(HTTP_CODE_METADATA_KEY, code, target.prototype);

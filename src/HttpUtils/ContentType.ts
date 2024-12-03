@@ -19,6 +19,12 @@ import { Constructable } from '../Utils/Constructable';
 
 export const HTTP_CONTENT_TYPE_METADATA_KEY = Symbol('cream:http:content-type');
 
+/**
+ * This decorator is used to decorate a class to add information about
+ * the content type that should be set in the Content-Type header
+ * @param contentType  the content type that should be set in the header
+ * @returns the decorator of the function
+ */
 export function ContentType<T extends Constructable>(contentType: MessageType) {
 	return function (target: T): T {
 		Reflect.defineMetadata(
