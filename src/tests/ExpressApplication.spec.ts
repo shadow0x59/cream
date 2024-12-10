@@ -14,16 +14,19 @@
  * limitations under the License.
  */
 
-import { ExpressApplication, ExpressMiddleware, ExpressModule } from '..';
-import express, { Request, Response } from 'express';
-import { ExpressController, Get } from '../ExpressAdapter/ExpressAdapters';
-import { UseMiddlewaresForController } from '../ExpressMiddleware/UseMiddleware';
 import {
-	ExtendedRequest,
+	ExpressErrorHandler,
+	ExpressService,
+	ExpressApplication,
+	ExpressMiddleware,
+	ExpressModule,
+	ExpressController,
+	Get,
+	UseMiddlewaresForController,
 	MiddlewareReturnData,
-} from '../ExpressMiddleware/ExpressMiddleware';
-import { ExpressService } from '../ExpressService/ExpressService';
-import { ExpressErrorHandler } from '../ExpressErrorHandler/ExpressErrorHandler';
+	ExtendedRequest,
+} from '..';
+import express, { Request, Response } from 'express';
 
 class MyMockApplication extends ExpressApplication {}
 

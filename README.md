@@ -12,6 +12,21 @@
 Cream stands for Concise REST API Maker and it is a ExpressJS extension mainly targeting TypeScript builds.
 It wasn't tested on plain JS.
 
+### Contents
+
+-   [Installation](#installation)
+-   [Usage](#usage)
+    -   [Index](#index)
+    -   [API Documentation](#documentation)
+    -   [First Steps](#first-steps)
+    -   [Handling Complex Objects](#handling-complex-objects)
+        -   [Handling data coming from the client](#handling-data-coming-from-the-client)
+        -   [Returning complex objects](#returning-complex-objects)
+    -   [Continuing](#continuing)
+-   [Comparison with Express](#comparing-it-with-express)
+-   [Contributors](#contributors)
+-   [Donations](#donations)
+
 # Installation
 
 If express is not installed:
@@ -31,6 +46,15 @@ npm install @creamapi/cream
 > Note: These examples use TypeScript, in order to follow them please setup a TS project.
 
 To create your own API with Cream it is easy! You just need to setup a few things then you can play with it with ease.
+
+### Index
+
+-   [API Documentation](#documentation)
+-   [First Steps](#first-steps)
+-   [Handling Complex Objects](#handling-complex-objects)
+    -   [Handling data coming from the client](#handling-data-coming-from-the-client)
+    -   [Returning complex objects](#returning-complex-objects)
+-   [Continuing](#continuing)
 
 ## Documentation
 
@@ -158,6 +182,7 @@ import {
 	MapTo,
 	HttpReturnCode,
 	ContentType,
+	Transform,
 } from '@creamapi/cream';
 
 @HttpReturnCode(200)
@@ -171,6 +196,10 @@ class HelloView {
 
 	@MapTo('userData')
 	public stringData: string;
+
+	@Transform((data: number) => data.toString(2))
+	@MapTo('binaryNum')
+	dataNum: number = 2;
 
 	otherData: number;
 
@@ -191,6 +220,11 @@ We also see AutoMap and MapTo, these two decorators are used to declare which fi
 > The difference between MapTo and AutoMap is that MapTo allows us to specify the name of the field whilst AutoMap will take the name of the decorated attribute.
 
 We can see that we can also serialize getters. This allows us to compute dynamically stuff when the object is serializable. Also, `this` correctly points to the correct object.
+
+It is also possible for us to transform data before it being serialized!
+
+> Transform will not affect the transformed data  
+> Multiple transforms can be applied, just know that they are applied in a bottom-up approach
 
 Now we want to use our custom data. As before let's reuse the last example as a base:
 
@@ -213,13 +247,14 @@ Now if we go again to http://localhost:4040/hello-world/my%20hello we will not s
 ```json
 {
 	"stringLength": 8,
-	"userData": "my hello"
+	"userData": "my hello",
+	"binaryNum": "10"
 }
 ```
 
 ## Continuing
 
-To expand our REST API we also need to receive more complex data from the user, but this topic, how to handle different HTTP requests, is covered in the [User Guide](public/index.html).
+To expand our REST API we also need to receive more complex data from the user, but this topic, how to handle different HTTP requests, is covered in the ~~[User Guide](public/index.html)~~ user guide that still has to be written, for now refer only to the [Documentation](#documentation).
 
 # Comparing it with Express
 

@@ -25,6 +25,7 @@ import {
 	SERIALIZER_META_INFO_METADATA_KEY,
 	SerializerMetaInfo,
 } from './SerializerMetaInfo';
+import { SERIALIZER_TRANSFORM_METADATA_KEY } from './Transform';
 
 /**
  * @internal
@@ -328,8 +329,21 @@ export abstract class Serializer {
 				serialItem.fieldName
 			);
 
+			let transformPipeline: Function[] =
+				Reflect.getMetadata(
+					SERIALIZER_TRANSFORM_METADATA_KEY,
+					data,
+					serialItem.fieldName
+				) || [];
+
+			let transformResult: any = datum;
+
+			for (let transform of transformPipeline) {
+				transformResult = transform(transformResult);
+			}
+
 			streamBuffer.push({
-				data: datum,
+				data: transformResult,
 				dataLabel: serialItem.outName,
 				metaInfo: datumMetaInfo,
 			});
