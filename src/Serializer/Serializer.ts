@@ -158,7 +158,7 @@ export abstract class Serializer {
 
 		let metaInfo = this.fetchMetaInfoForObject(dataLabel);
 
-		if (this.dataIsArray(data)) {
+		if (Array.isArray(data)) {
 			metaInfo.addAttribute(SerializerCommon.Attributes.Array);
 			this.autoMapArray(data as any[]);
 			targetName = dataLabel;
@@ -264,15 +264,6 @@ export abstract class Serializer {
 		metaInfo: SerializerMetaInfo | undefined
 	): Promise<string> {
 		return '';
-	}
-
-	/**
-	 * This method checks if the provided data is an array
-	 * @param data the data to be checked
-	 * @returns true if data is array, false otherwise
-	 */
-	private dataIsArray(data: Object): boolean {
-		return data.hasOwnProperty('length');
 	}
 
 	/**
