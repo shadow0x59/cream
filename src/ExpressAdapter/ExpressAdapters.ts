@@ -30,7 +30,7 @@ import { Route, Routes, ROUTES_METADATA_KEY } from '../HttpUtils/Route';
 
 import { ExpressModule } from './ExpressModule';
 import { ParameterProp, ParameterProps } from './ParameterProp';
-import { BootstrapSerializer } from '../Serializer/ExpressSerializer';
+import { BootstrapSerializer } from '../Serializer/Serializer';
 import { HTTP_CODE_METADATA_KEY } from '../HttpUtils/HttpReturnCode';
 import { HTTP_CONTENT_TYPE_METADATA_KEY } from '../HttpUtils/ContentType';
 import { MessageType } from '../ExchangeUtils/Message';

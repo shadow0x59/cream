@@ -46,6 +46,7 @@ export {
 	UseMiddleware,
 	UseMiddlewaresForController,
 } from './ExpressMiddleware/UseMiddleware';
+export { Constructable } from './Utils/Constructable';
 
 export {
 	ExpressService,
@@ -56,10 +57,7 @@ export { HttpMethod } from './HttpUtils/HttpMethod';
 export { HttpReturnCode } from './HttpUtils/HttpReturnCode';
 export { ContentType } from './HttpUtils/ContentType';
 
-export {
-	Serializer,
-	BootstrapSerializer,
-} from './Serializer/ExpressSerializer';
+export { Serializer, BootstrapSerializer } from './Serializer/Serializer';
 export { CreamSerializers } from './Serializer/CommonSerializers';
 export { Serializable, AutoMap, MapTo } from './Serializer/Serializable';
 export { Meta, SerializerMetaInfo } from './Serializer/SerializerMetaInfo';

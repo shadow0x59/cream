@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Serializer } from './ExpressSerializer';
+import { Serializer } from './Serializer';
 import { Constructable } from '../Utils/Constructable';
 
 export const SERIALIZER_METADATA_KEY = Symbol('cream:data-serializer');

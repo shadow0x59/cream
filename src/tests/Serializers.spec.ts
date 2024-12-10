@@ -50,6 +50,18 @@ describe('BootstrapSerializer serialization test', () => {
 	it('Should not serialize non-serializable object', async () => {
 		expect(bootstrap.start(new NonSerializableObject())).rejects.toThrow();
 	});
+
+	it('Should serialize undefined as empty string', async () => {
+		expect(bootstrap.start(undefined)).resolves.toBe('');
+	});
+
+	it('Should serialize a void return from function as empty string', async () => {
+		const fun = function (): void {
+			return;
+		};
+
+		expect(bootstrap.start(fun())).resolves.toBe('');
+	});
 });
 
 @Serializable(CreamSerializers.JSON)

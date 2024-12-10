@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Serializer, SerialBite, SerializerCommon } from './ExpressSerializer';
+import { Serializer, SerialBite, SerializerCommon } from './Serializer';
 import { SerializerMetaInfo } from './SerializerMetaInfo';
 
 /**

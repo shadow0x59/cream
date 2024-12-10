@@ -108,6 +108,10 @@ export abstract class Serializer {
 
 	abstract serializeNull(dataLabel: string): Promise<string>;
 
+	async serializeUndefined(dataLabel: string): Promise<string> {
+		return '';
+	}
+
 	/**
 	 * This method is used to serialize a piece of data
 	 * @param dataLabel the label of the data
@@ -127,6 +131,10 @@ export abstract class Serializer {
 
 		if (data === null) {
 			return this.serializeNull(dataLabel);
+		}
+
+		if (data === undefined) {
+			return this.serializeUndefined(dataLabel);
 		}
 
 		return this.serializeAnyObject(dataLabel, data);

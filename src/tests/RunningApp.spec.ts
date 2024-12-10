@@ -42,7 +42,7 @@ import {
 } from '..';
 
 import supertest from 'supertest';
-import { SerializerCommon } from '../Serializer/ExpressSerializer';
+import { SerializerCommon } from '../Serializer/Serializer';
 
 interface AuthData {
 	authHeader: string;
