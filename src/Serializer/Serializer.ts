@@ -108,8 +108,25 @@ export abstract class Serializer {
 
 	abstract serializeNull(dataLabel: string): Promise<string>;
 
-	async serializeUndefined(dataLabel: string): Promise<string> {
+	/**
+	 * This method is used to handle undefined data.
+	 * By default undefined is returned as an empty string
+	 * @param dataLabel (unused) the label of the data.
+	 * @returns empty string
+	 */
+	async serializeUndefined(_dataLabel: string): Promise<string> {
 		return '';
+	}
+
+	/**
+	 * This method is used as the default behaviour for serializing Dates
+	 * it uses the Date.toISOString method for serializing it.
+	 * @param dataLabel (unused) the label of the data
+	 * @param data the date to be serialized
+	 * @returns the serialized string in ISO format
+	 */
+	async serializeDate(_dataLabel: string, data: Date): Promise<string> {
+		return data.toISOString();
 	}
 
 	/**
@@ -135,6 +152,10 @@ export abstract class Serializer {
 
 		if (data === undefined) {
 			return this.serializeUndefined(dataLabel);
+		}
+
+		if (data instanceof Date) {
+			return this.serializeDate(dataLabel, data);
 		}
 
 		return this.serializeAnyObject(dataLabel, data);

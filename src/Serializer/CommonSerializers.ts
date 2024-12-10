@@ -83,6 +83,18 @@ export namespace CreamSerializers {
 		}
 
 		/**
+		 * This method is used to serialize a Date into a string
+		 * it works like Date.toJSON except it is calling directly
+		 * Date.toISOString
+		 * @param dataLabel unused. The label of the field containing the date
+		 * @param data the actual date to be serialized
+		 * @returns the serialized date as string, encapsulated by colons ("\<date\>").
+		 */
+		async serializeDate(dataLabel: string, data: Date): Promise<string> {
+			return '"' + (await super.serializeDate(dataLabel, data)) + '"';
+		}
+
+		/**
 		 * This method will do the job of serializing the input
 		 * object that is automatically converted to a stream.\
 		 * @remarks The stream order is top-down from class notation,
@@ -206,6 +218,20 @@ export namespace CreamSerializers {
 		async serializeNull(dataLabel: string): Promise<string> {
 			if (dataLabel == '') return 'null';
 			return '<' + dataLabel + '/>';
+		}
+
+		async serializeDate(dataLabel: string, data: Date): Promise<string> {
+			if (dataLabel == '') return super.serializeDate(dataLabel, data);
+			else
+				return (
+					'<' +
+					dataLabel +
+					'>' +
+					(await super.serializeDate(dataLabel, data)) +
+					'</' +
+					dataLabel +
+					'>'
+				);
 		}
 
 		async handleSerializationStream(

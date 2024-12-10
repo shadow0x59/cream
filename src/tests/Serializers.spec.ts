@@ -48,11 +48,21 @@ describe('BootstrapSerializer serialization test', () => {
 	});
 
 	it('Should not serialize non-serializable object', async () => {
-		expect(bootstrap.start(new NonSerializableObject())).rejects.toThrow();
+		await expect(
+			bootstrap.start(new NonSerializableObject())
+		).rejects.toThrow();
+	});
+
+	it('Should serialize a Date to Date.toString()', async () => {
+		let currentDate = new Date(Date.now());
+
+		await expect(bootstrap.start(currentDate)).resolves.toBe(
+			currentDate.toISOString()
+		);
 	});
 
 	it('Should serialize undefined as empty string', async () => {
-		expect(bootstrap.start(undefined)).resolves.toBe('');
+		await expect(bootstrap.start(undefined)).resolves.toBe('');
 	});
 
 	it('Should serialize a void return from function as empty string', async () => {
@@ -60,7 +70,7 @@ describe('BootstrapSerializer serialization test', () => {
 			return;
 		};
 
-		expect(bootstrap.start(fun())).resolves.toBe('');
+		await expect(bootstrap.start(fun())).resolves.toBe('');
 	});
 });
 
@@ -75,6 +85,7 @@ class Test1JSONSerializableNested {
 	isNotWorking: boolean = false;
 }
 
+let nowDate = new Date(Date.now());
 @Serializable(CreamSerializers.JSON)
 class Test1JSONSerializable {
 	@AutoMap
@@ -90,16 +101,26 @@ class Test1JSONSerializable {
 	testNull: null = null;
 
 	@AutoMap
+	testUndefined: undefined = undefined;
+
+	@AutoMap
+	testDate: Date = nowDate;
+
+	@AutoMap
 	nested: Test1JSONSerializableNested = new Test1JSONSerializableNested();
 }
 
 describe('JSON Serialization tests', () => {
 	it('Should serialize the object of type Test1JSONSerializable', async () => {
 		let targetString =
-			'{"test":"isWorking","testNum":1,"testBool":true,"testNull":null,"nested":{"notWorking":false}}';
+			'{"test":"isWorking","testNum":1,"testBool":true,"testNull":null,"testDate":"' +
+			nowDate.toISOString() +
+			'","nested":{"notWorking":false}}';
 		let objectTbs = new Test1JSONSerializable();
 
 		let data = await bootstrap.start(objectTbs);
+
+		console.log(data);
 
 		expect(data).toEqual(targetString);
 	});
