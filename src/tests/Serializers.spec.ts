@@ -22,6 +22,7 @@ import {
 	BootstrapSerializer,
 	Meta,
 	JSONSerializableArray,
+	Transform,
 } from '..';
 
 let bootstrap = new BootstrapSerializer();
@@ -110,6 +111,14 @@ class Test1JSONSerializable {
 	nested: Test1JSONSerializableNested = new Test1JSONSerializableNested();
 }
 
+@Serializable(CreamSerializers.JSON)
+class TestTransformSerializerJSON {
+	@Transform((data: number) => data < 4)
+	@Transform((data: number) => data * 2)
+	@MapTo('data-transformed')
+	data: number = 5;
+}
+
 describe('JSON Serialization tests', () => {
 	it('Should serialize the object of type Test1JSONSerializable', async () => {
 		let targetString =
@@ -156,6 +165,12 @@ describe('JSON Serialization tests', () => {
 		expect(data).toEqual('["1","2","3","4"]');
 	});
 
+	it('Should serialize an empty array', async () => {
+		let dataTbs = new JSONSerializableArray([]);
+		let data = await bootstrap.start(dataTbs);
+		expect(data).toEqual('[]');
+	});
+
 	it('Should serialize a top level array of booleans', async () => {
 		let dataTbs = new JSONSerializableArray<boolean>([
 			true,
@@ -177,6 +192,14 @@ describe('JSON Serialization tests', () => {
 		]);
 		let data = await bootstrap.start(dataTbs);
 		expect(data).toMatch('[[1,2],[3,4],[1,2]]');
+	});
+
+	it('Should return an object containing a transformed number', async () => {
+		let dataTbs = new TestTransformSerializerJSON();
+
+		let data = await bootstrap.start(dataTbs);
+
+		expect(data).toBe('{"data-transformed":false}');
 	});
 });
 

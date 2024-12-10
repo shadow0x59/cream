@@ -25,32 +25,30 @@ import {
 	HttpReturnCode,
 	Serializable,
 	UseMiddleware,
-} from '..';
-import {
-	BODY_METADATA_KEY,
+	ExpressController,
 	Body,
 	Delete,
-	ExpressController,
 	Get,
-	Header,
-	MIDDLEWARE_METADATA_KEY,
-	PARAMS_METADATA_KEY,
 	Post,
 	Put,
 	UrlParameter,
-} from '../ExpressAdapter/ExpressAdapters';
-import {
-	ExtendedRequest,
+	Header,
 	MiddlewareReturnData,
-} from '../ExpressMiddleware/ExpressMiddleware';
-import { ROUTES_METADATA_KEY, Route } from '../HttpUtils/Route';
-import {
+	ExtendedRequest,
 	MiddlewareData,
-	MiddlewareParameterProp,
-} from '../ExpressMiddleware/MiddlewareData';
+	RestError,
+	UseMiddlewaresForController,
+} from '..';
+
+import {
+	BODY_METADATA_KEY,
+	MIDDLEWARE_METADATA_KEY,
+	PARAMS_METADATA_KEY,
+} from '../ExpressAdapter/ExpressAdapters';
+
+import { ROUTES_METADATA_KEY, Route } from '../HttpUtils/Route';
+import { MiddlewareParameterProp } from '../ExpressMiddleware/MiddlewareData';
 import { ParameterProp } from '../ExpressAdapter/ParameterProp';
-import { RestError } from '../ExpressErrorHandler/ExpressErrorHandler';
-import { UseMiddlewaresForController } from '../ExpressMiddleware/UseMiddleware';
 
 class MockMiddleware extends ExpressMiddleware {
 	public behaviour(
