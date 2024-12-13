@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import Test from 'supertest/lib/test';
 import {
 	CreamSerializers,
 	Serializable,
@@ -119,6 +120,17 @@ class TestTransformSerializerJSON {
 	data: number = 5;
 }
 
+class TestObject {
+	data: number = 5;
+}
+
+@Serializable(CreamSerializers.JSON)
+class TestTransformObjectJSON {
+	@Transform((data: TestObject) => data.data)
+	@AutoMap
+	object: TestObject = new TestObject();
+}
+
 describe('JSON Serialization tests', () => {
 	it('Should serialize the object of type Test1JSONSerializable', async () => {
 		let targetString =
@@ -200,6 +212,15 @@ describe('JSON Serialization tests', () => {
 		let data = await bootstrap.start(dataTbs);
 
 		expect(data).toBe('{"data-transformed":false}');
+	});
+
+	it('Should return an object containing a trasformed object', async () => {
+		let dataTbs = new TestTransformObjectJSON();
+
+		let data = await bootstrap.start(dataTbs);
+		console.log(data);
+
+		expect(data).toBe('{"object":5}');
 	});
 });
 
