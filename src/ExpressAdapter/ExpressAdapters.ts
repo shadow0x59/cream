@@ -24,7 +24,10 @@ import {
 	MiddlewareDataCollection,
 	MiddlewareDataCollections,
 } from '../ExpressMiddleware/ExpressMiddleware';
-import { MiddlewareParameterProps } from '../ExpressMiddleware/MiddlewareData';
+import {
+	MiddlewareParameterProp,
+	MiddlewareParameterProps,
+} from '../ExpressMiddleware/MiddlewareData';
 import { HttpMethod } from '../HttpUtils/HttpMethod';
 import { Route, Routes, ROUTES_METADATA_KEY } from '../HttpUtils/Route';
 
@@ -34,11 +37,16 @@ import { BootstrapSerializer } from '../Serializer/Serializer';
 import { HTTP_CODE_METADATA_KEY } from '../HttpUtils/HttpReturnCode';
 import { HTTP_CONTENT_TYPE_METADATA_KEY } from '../HttpUtils/ContentType';
 import { MessageType } from '../ExchangeUtils/Message';
+import { TransactionManager } from '../ExchangeUtils/TransactionManager';
+import { ArgsBuilder } from './ArgsBuilder';
 
 export const BODY_METADATA_KEY = Symbol('express:bodyAssoc');
 export const PARAMS_METADATA_KEY = Symbol('express:paramAssoc');
 export const HEADERS_METADATA_KEY = Symbol('express:headersAssoc');
 export const MIDDLEWARE_METADATA_KEY = Symbol('express:middlewareAssoc');
+export const TRANSACTION_MANAGER_METADATA_KEY = Symbol(
+	'express:transactionManager'
+);
 
 /**
  * This method is used to declare a method of a class (that must extend {@link ExpressModule})
@@ -83,38 +91,33 @@ export function ExpressCall<T extends ExpressModule>(
 		descriptor: PropertyDescriptor
 	) {
 		let method = descriptor.value!;
+		let methodTransactionManager = new TransactionManager(method, target);
+		Reflect.defineMetadata(
+			TRANSACTION_MANAGER_METADATA_KEY,
+			methodTransactionManager,
+			target,
+			propertyName
+		);
+
 		let newMethod = (thisArg: ExpressModule) =>
 			async function (
 				req: ExtendedRequest,
 				res: Response,
 				next: NextFunction
 			) {
-				let args = [];
+				let argsBuilder = new ArgsBuilder(req);
+
 				let bodyAssocs: ParameterProps = Reflect.getOwnMetadata(
 					BODY_METADATA_KEY,
 					target,
 					propertyName
 				);
-				if (bodyAssocs) {
-					for (let param of bodyAssocs) {
-						if (param.name == ':body') {
-							args[param.index] = req.body;
-						} else {
-							args[param.index] = (req.body || [])[param.name];
-						}
-					}
-				}
 
 				let paramAssoc: ParameterProps = Reflect.getOwnMetadata(
 					PARAMS_METADATA_KEY,
 					target,
 					propertyName
 				);
-				if (paramAssoc) {
-					for (let param of paramAssoc) {
-						args[param.index] = req.params[param.name];
-					}
-				}
 
 				let headerMappings: ParameterProps = Reflect.getOwnMetadata(
 					HEADERS_METADATA_KEY,
@@ -122,69 +125,54 @@ export function ExpressCall<T extends ExpressModule>(
 					propertyName
 				);
 
-				if (headerMappings) {
-					for (let mapping of headerMappings) {
-						args[mapping.index] = req.header(mapping.name);
-					}
-				}
-
 				let middlewareAssoc: MiddlewareParameterProps =
 					Reflect.getOwnMetadata(
 						MIDDLEWARE_METADATA_KEY,
 						target,
 						propertyName
 					);
-				if (middlewareAssoc) {
-					for (let param of middlewareAssoc) {
-						let collections: MiddlewareDataCollections =
-							req.middlewareDataCollections || new Map();
 
-						let collection: MiddlewareDataCollection =
-							collections.get(param.collection);
-
-						if (collection) {
-							if (param.name == '*') {
-								args[param.index] = collection;
-							} else {
-								args[param.index] = (collection as any)[
-									param.name
-								];
-							}
-						} else {
-							args[param.index] = undefined;
-						}
-					}
-				}
+				argsBuilder
+					.addBodyAssociations(bodyAssocs)
+					.addParametersAssociations(paramAssoc)
+					.addHeaderAssociations(headerMappings)
+					.addMiddlewareAssociations(middlewareAssoc);
 
 				try {
 					let bootstrapSerializer = new BootstrapSerializer();
-					let result = await method.apply(thisArg, args);
+
+					// I want to reset the transaction manager here to guarantee that
+					// it is always in the standard state
+					methodTransactionManager.reset(thisArg);
+
+					let result = await method.apply(
+						thisArg,
+						argsBuilder.finalize()
+					);
+
 					let data = await bootstrapSerializer.start(result);
 
-					let status = 200;
 					try {
-						status =
-							Reflect.getMetadata(
-								HTTP_CODE_METADATA_KEY,
-								result
-							) || status;
+						methodTransactionManager.ReturnCode(
+							Reflect.getMetadata(HTTP_CODE_METADATA_KEY, result)
+						);
 					} catch (e) {
 						/* do nothing */
 					}
 
-					let contentType: MessageType = 'text/plain';
 					try {
-						contentType =
-							(Reflect.getMetadata(
+						methodTransactionManager.ContentType(
+							Reflect.getMetadata(
 								HTTP_CONTENT_TYPE_METADATA_KEY,
 								result
-							) as MessageType) || contentType;
+							) as MessageType
+						);
 					} catch (e) {
 						/* Do nothing */
 					}
 
-					res.set('Content-Type', contentType)
-						.status(status)
+					methodTransactionManager
+						.finalizeTransaction(res)
 						.send(data);
 				} catch (e) {
 					if (e instanceof RestError) {

@@ -224,7 +224,6 @@ export abstract class Serializer {
 	 * @returns the current context
 	 */
 	private getContext(): Object {
-		if (this.contextStack.length == 0) return {};
 		return this.contextStack[this.contextStack.length - 1];
 	}
 

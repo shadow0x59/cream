@@ -39,6 +39,7 @@ import {
 	HttpReturnCode,
 	Post,
 	Meta,
+	TransactionManager,
 } from '..';
 
 import supertest from 'supertest';
@@ -251,6 +252,15 @@ class MyController extends ExpressModule {
 	public async getPlainText(): Promise<string> {
 		return 'plaintext string';
 	}
+
+	@Get('/with-transaction-manager/string')
+	public async withTransactionManager(): Promise<string> {
+		let transaction: TransactionManager = this.prepareTransaction();
+
+		transaction.ContentType('text/plain').ReturnCode(301);
+
+		return 'ciao';
+	}
 }
 
 class CustomErrorHandler implements ExpressErrorHandler {
@@ -261,6 +271,7 @@ class CustomErrorHandler implements ExpressErrorHandler {
 
 class CustomVerboseErrorHandler implements ExpressErrorHandler {
 	handle(err: Error, req: Request, res: Response): void {
+		console.log(err);
 		res.send({ message: err.message, error: err });
 	}
 }
@@ -401,6 +412,18 @@ describe('Testing parameter binding and middlewares running', () => {
 		expect(res.status).toBe(200);
 		expect(res.header['content-type']).toContain('text/plain');
 		expect(res.text).toEqual('plaintext string');
+	});
+
+	it('Should return a plain text with 301 return code', async () => {
+		appInstance.errorHandler = new CustomVerboseErrorHandler();
+
+		let res = await supertest(appInstance.getExpressApp()).get(
+			'/my-route/with-transaction-manager/string'
+		);
+
+		expect(res.status).toBe(301);
+		expect(res.header['content-type']).toContain('text/plain');
+		expect(res.text).toEqual('ciao');
 	});
 
 	it('Should stop', async () => {
