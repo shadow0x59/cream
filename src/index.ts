@@ -63,3 +63,4 @@ export { Serializable, AutoMap, MapTo } from './Serializer/Serializable';
 export { Meta, SerializerMetaInfo } from './Serializer/SerializerMetaInfo';
 export { Transform } from './Serializer/Transform';
 export { JSONSerializableArray } from './Serializer/SerializableDataStructures';
+export { TransactionManager } from './ExchangeUtils/TransactionManager';

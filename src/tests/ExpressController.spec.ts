@@ -157,6 +157,10 @@ class MockController extends ExpressModule {
 	private normalMethod() {
 		return 'normalData';
 	}
+
+	public normalMethodCallingPrepareTransaction() {
+		this.prepareTransaction();
+	}
 }
 
 let mockInstance: MockController;
@@ -219,6 +223,11 @@ describe('ExpressController & ExpressMiddleware Test Suite', () => {
 		let res = mockInstance.testCall3('passed-data', 'fieldData');
 		expect(res.body).toBe('passed-data');
 		expect(res.field1).toBe('fieldData');
+	});
+	it('Should fail calling prepareTransaction in a method that is not an endpoint', () => {
+		expect(() =>
+			mockInstance.normalMethodCallingPrepareTransaction()
+		).toThrow();
 	});
 
 	it('Should have 3 parameters to be injected', async () => {

@@ -17,6 +17,10 @@
 import { Router } from 'express';
 import { BaseMiddlewares } from '../ExpressMiddleware/ExpressMiddleware';
 import { ExpressApplication } from '../ExpressApplication';
+import { getCallSite } from 'util';
+import { TRANSACTION_MANAGER_METADATA_KEY } from './ExpressAdapters';
+import { TransactionManager } from '../ExchangeUtils/TransactionManager';
+import { RestError } from '../ExpressErrorHandler/ExpressErrorHandler';
 
 /**
  * This class is just a way to allow to explicitly declare
@@ -68,6 +72,30 @@ export class ExpressModule {
 
 	public get app(): ExpressApplication {
 		return this._app;
+	}
+
+	public prepareTransaction(): TransactionManager {
+		let error: Error = new Error();
+		let oldLimit = Error.stackTraceLimit;
+		Error.stackTraceLimit = 2;
+		Error.captureStackTrace(error);
+		Error.stackTraceLimit = oldLimit;
+		let line = error.stack!.split('\n')[2];
+		let callerName = line.split('.')[1].split(' ')[0];
+
+		let transactionManager = Reflect.getMetadata(
+			TRANSACTION_MANAGER_METADATA_KEY,
+			this,
+			callerName
+		) as TransactionManager;
+
+		if (transactionManager == undefined) {
+			throw new Error(
+				'Cannot prepare a transaction in a method that is not an ExpressMethod (or any of Get, Put, Post, Delete).'
+			);
+		}
+
+		return transactionManager;
 	}
 }
 

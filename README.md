@@ -140,6 +140,35 @@ myCustApp.start();
 Now if we go to https://localhost:4040/hello-world we will see
 `Hello, World!` written in our browser!
 
+### One small step
+
+Finally, for a very simpe REST API, the only thing missing is some way to tell the user the status of our transaction.  
+Cream currently supports only setting the content type and the return code. Other information like cookies will be available soon.  
+How to set this kind of information though? We don't have access to the transaction (or response), we can only accept requests and send
+response data.
+
+There is a perfect tool for this job: `ExpressModule.prepareTransaction()`. This method will return an object that allows us to set some information
+about the transaction with ease! BEWARE: This method will throw an error when it is used outside a method that is not decorated as @Get @Put @Post or @Delete!  
+Lets see how to use it by editing the previous _HelloController.ts_:
+
+File: _HelloController.ts_
+
+```ts
+import { ExpressController, Get, TransactionManager } from '@creamapi/cream';
+
+@ExpressController('/')
+export class HelloController extends ExpressModule {
+	@Get('/hello-world')
+	public helloPrinter(): string {
+		TransactionManager manager = this.prepareTransaction();
+		manager.ContentType('application/json').StatusCode(200);
+		return '{"hello": "world!"}';
+	}
+}
+```
+
+Now if we open again https://localhost:4040/hello-world we will see a JSON object.
+
 ## Handling complex objects
 
 Sending a string to the browser is cool, but REST APIs are more complex than this.  
