@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import Test from 'supertest/lib/test';
 import {
 	CreamSerializers,
 	Serializable,

@@ -17,10 +17,8 @@
 import { Router } from 'express';
 import { BaseMiddlewares } from '../ExpressMiddleware/ExpressMiddleware';
 import { ExpressApplication } from '../ExpressApplication';
-import { getCallSite } from 'util';
 import { TRANSACTION_MANAGER_METADATA_KEY } from './ExpressAdapters';
 import { TransactionManager } from '../ExchangeUtils/TransactionManager';
-import { RestError } from '../ExpressErrorHandler/ExpressErrorHandler';
 
 /**
  * This class is just a way to allow to explicitly declare

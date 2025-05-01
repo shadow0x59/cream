@@ -261,6 +261,15 @@ class MyController extends ExpressModule {
 
 		return 'ciao';
 	}
+
+	@Get('/transaction-manager')
+	public transactionManagerTest() {
+		let tm = this.prepareTransaction();
+		tm.ContentType(undefined);
+		tm.ReturnCode(undefined);
+
+		return 'test';
+	}
 }
 
 class CustomErrorHandler implements ExpressErrorHandler {
@@ -424,6 +433,15 @@ describe('Testing parameter binding and middlewares running', () => {
 		expect(res.status).toBe(301);
 		expect(res.header['content-type']).toContain('text/plain');
 		expect(res.text).toEqual('ciao');
+	});
+
+	it('Should keep standard configuration when undefined is passed to transaction manager', async () => {
+		let res = await supertest(appInstance.getExpressApp()).get(
+			'/my-route/transaction-manager'
+		);
+		expect(res.status).toBe(200);
+		expect(res.header['content-type']).toContain('text/plain');
+		expect(res.text).toEqual('test');
 	});
 
 	it('Should stop', async () => {

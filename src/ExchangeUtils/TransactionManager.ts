@@ -14,8 +14,12 @@
  * limitations under the License.
  */
 
+import { HeaderBuilder } from '../HttpUtils/Headers/HeaderBuilder';
+import { HeadersManager } from '../HttpUtils/Headers/HeadersManager';
 import { MessageType } from './Message';
 import { Response } from 'express';
+import { ResponseCookieManager } from '../HttpUtils/Cookies/ResponseCookiesManager';
+import { NoCookiesHeaderNames } from '../HttpUtils/Headers/HeadersDef';
 
 /**
  * This class is used to prepare the transaction before sending the data to the user.\
@@ -25,16 +29,15 @@ import { Response } from 'express';
  */
 export class TransactionManager {
 	/**
-	 * The transaction content type
-	 * @see {@link MessageType}
-	 */
-	private contentType!: MessageType;
-
-	/**
 	 * The transaction HTTP Return Code
 	 * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Status | HTTP Status Codes}
 	 */
 	private retcode!: number;
+
+	/**
+	 * This object will handle headers
+	 */
+	private headers: HeadersManager;
 
 	/**
 	 * @param method The method that will handle the transaction
@@ -44,7 +47,39 @@ export class TransactionManager {
 		private method: any,
 		private thisArg: any
 	) {
+		this.headers = new HeadersManager();
 		this.reset(thisArg);
+	}
+
+	/**
+	 * This method is used by the ExpressCall wrapper to set the cookies in the transaction
+	 * manager.
+	 * @note This will overwrite any previously set headers.
+	 * @param headers the headers manager cotaining new headers
+	 * @returns a self reference to the transaction manager for chaining more operations
+	 */
+	setHeaders(headers: HeadersManager | undefined) {
+		if (headers == undefined) return this;
+		for (let key of headers.keys()) {
+			this.headers.set(key, headers.get(key)!);
+		}
+
+		return this;
+	}
+
+	/**
+	 * This method allows to retrieve a header builder for the requested header
+	 * @note this will create a new header builder if the one searched is undefined
+	 * @param headerName the name of the header
+	 * @returns the header builder associated with the headerName or undefined if none is found
+	 */
+	getHeaderBuilder(headerName: NoCookiesHeaderNames): HeaderBuilder {
+		let builder: HeaderBuilder =
+			this.headers.getAs<HeaderBuilder>(headerName) ||
+			new HeaderBuilder();
+		this.headers.set(headerName, builder);
+
+		return builder;
 	}
 
 	/**
@@ -57,13 +92,20 @@ export class TransactionManager {
 		contentType: MessageType | undefined
 	): TransactionManager {
 		if (contentType == undefined) return this;
-		this.contentType = contentType;
+		this.headers.getAs<HeaderBuilder>('Content-Type')![0] = contentType;
 		return this;
 	}
 
 	/**
+	 * Returns the cookies manager that will set or unset cookies for responses to users
+	 */
+	public getResponseCookiesManager(): ResponseCookieManager {
+		return this.headers.getAs<ResponseCookieManager>('Set-Cookie')!;
+	}
+
+	/**
 	 * This method is used to set the return code of the transaction.
-	 * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Status | HTTP Status Codes}	 * @param contentType The content type of the data sent to the user
+	 * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Status | HTTP Status Codes}
 	 * @param retcode is the HTTP status code sent to the user. If retcode is undefined then nothing is changed from the last value
 	 * @returns a self reference to the transaction manager for chaining more operations
 	 */
@@ -81,28 +123,13 @@ export class TransactionManager {
 	 * @returns a self reference to the transaction manager
 	 */
 	public reset(thisArg: any): TransactionManager {
-		this.contentType = 'text/plain';
+		this.headers.clear();
+		this.headers.set('Content-Type', new HeaderBuilder());
+		this.headers.set('Set-Cookie', new ResponseCookieManager());
+		this.ContentType('text/plain');
 		this.retcode = 200;
 		this.thisArg = thisArg;
 		return this;
-	}
-
-	/**
-	 * @deprecated
-	 * This method is used to get the status code. It will be replaced by finalizeTransaction
-	 * @returns the status code of the transaction
-	 */
-	public getStatusCode(): number {
-		return this.retcode;
-	}
-
-	/**
-	 * @deprecated
-	 * This method is used to get the content type. It will be replaced by finalizeTransaction
-	 * @returns the content type of the transaction
-	 */
-	public getContentType(): MessageType {
-		return this.contentType;
 	}
 
 	/**
@@ -111,6 +138,9 @@ export class TransactionManager {
 	 * @returns the modified transaction
 	 */
 	public finalizeTransaction(res: Response): Response {
-		return res.set('Content-Type', this.contentType).status(this.retcode);
+		for (let i of this.headers.keys()) {
+			res.set(i, this.headers.get(i)!.toConcreteHeader());
+		}
+		return res.status(this.retcode);
 	}
 }

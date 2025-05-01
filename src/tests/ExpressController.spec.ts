@@ -224,6 +224,7 @@ describe('ExpressController & ExpressMiddleware Test Suite', () => {
 		expect(res.body).toBe('passed-data');
 		expect(res.field1).toBe('fieldData');
 	});
+
 	it('Should fail calling prepareTransaction in a method that is not an endpoint', () => {
 		expect(() =>
 			mockInstance.normalMethodCallingPrepareTransaction()

@@ -19,15 +19,8 @@ import 'reflect-metadata';
 import { NextFunction, Response } from 'express';
 
 import { RestError } from '../ExpressErrorHandler/ExpressErrorHandler';
-import {
-	ExtendedRequest,
-	MiddlewareDataCollection,
-	MiddlewareDataCollections,
-} from '../ExpressMiddleware/ExpressMiddleware';
-import {
-	MiddlewareParameterProp,
-	MiddlewareParameterProps,
-} from '../ExpressMiddleware/MiddlewareData';
+import { ExtendedRequest } from '../ExpressMiddleware/ExpressMiddleware';
+import { MiddlewareParameterProps } from '../ExpressMiddleware/MiddlewareData';
 import { HttpMethod } from '../HttpUtils/HttpMethod';
 import { Route, Routes, ROUTES_METADATA_KEY } from '../HttpUtils/Route';
 
@@ -35,10 +28,15 @@ import { ExpressModule } from './ExpressModule';
 import { ParameterProp, ParameterProps } from './ParameterProp';
 import { BootstrapSerializer } from '../Serializer/Serializer';
 import { HTTP_CODE_METADATA_KEY } from '../HttpUtils/HttpReturnCode';
-import { HTTP_CONTENT_TYPE_METADATA_KEY } from '../HttpUtils/ContentType';
-import { MessageType } from '../ExchangeUtils/Message';
 import { TransactionManager } from '../ExchangeUtils/TransactionManager';
 import { ArgsBuilder } from './ArgsBuilder';
+import { HTTP_HEADERS_METADATA_KEY } from '../HttpUtils/Headers/Header';
+import { HeadersManager } from '../HttpUtils/Headers/HeadersManager';
+import { Cookie } from '../HttpUtils/Cookies/Cookie';
+import {
+	DynamicCookieMapping,
+	HTTP_DYNAMIC_COOKIES,
+} from '../HttpUtils/Cookies/DynamicCookie';
 
 export const BODY_METADATA_KEY = Symbol('express:bodyAssoc');
 export const PARAMS_METADATA_KEY = Symbol('express:paramAssoc');
@@ -153,6 +151,26 @@ export function ExpressCall<T extends ExpressModule>(
 					let data = await bootstrapSerializer.start(result);
 
 					try {
+						let cookiesManager =
+							methodTransactionManager.getResponseCookiesManager();
+						let dynamicCookies: DynamicCookieMapping[] =
+							Reflect.getMetadata(HTTP_DYNAMIC_COOKIES, result) ||
+							[];
+						cookiesManager.concat(
+							dynamicCookies.map(
+								(cookieMap: DynamicCookieMapping) =>
+									Cookie.fromCookieOpts(
+										cookieMap.cookieName,
+										result[cookieMap.propertyName],
+										cookieMap.opts
+									)
+							)
+						);
+					} catch (e) {
+						/* do nothing */
+					}
+
+					try {
 						methodTransactionManager.ReturnCode(
 							Reflect.getMetadata(HTTP_CODE_METADATA_KEY, result)
 						);
@@ -161,11 +179,11 @@ export function ExpressCall<T extends ExpressModule>(
 					}
 
 					try {
-						methodTransactionManager.ContentType(
+						methodTransactionManager.setHeaders(
 							Reflect.getMetadata(
-								HTTP_CONTENT_TYPE_METADATA_KEY,
+								HTTP_HEADERS_METADATA_KEY,
 								result
-							) as MessageType
+							) as HeadersManager
 						);
 					} catch (e) {
 						/* Do nothing */
