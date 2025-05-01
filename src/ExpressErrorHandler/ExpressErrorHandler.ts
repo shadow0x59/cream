@@ -16,7 +16,15 @@
 
 import { Response, Request } from 'express';
 
+/**
+ * This error is used to communicate with the user that made the api rest call.
+ * It allows to set the status code of the transaction.
+ */
 export class RestError extends Error {
+	/**
+	 * @param message The error message
+	 * @param statusCode the http status code of the transaction
+	 */
 	constructor(
 		message: string,
 		public readonly statusCode: number

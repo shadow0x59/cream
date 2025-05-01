@@ -252,10 +252,12 @@ export class ExpressApplication {
 	 */
 	public async stop(): Promise<void> {
 		return new Promise<void>((resolve, reject) => {
+			console.log('Stopping server...');
 			this.server!.close(async (err) => {
 				if (err) {
 					reject(err);
 				}
+				console.log('Server closed successfully');
 				resolve();
 			});
 		});

@@ -16,8 +16,7 @@
 
 import { MessageType } from '../ExchangeUtils/Message';
 import { Constructable } from '../Utils/Constructable';
-
-export const HTTP_CONTENT_TYPE_METADATA_KEY = Symbol('cream:http:content-type');
+import { StaticResponseHeader } from './Headers/Header';
 
 /**
  * This decorator is used to decorate a class to add information about
@@ -26,12 +25,5 @@ export const HTTP_CONTENT_TYPE_METADATA_KEY = Symbol('cream:http:content-type');
  * @returns the decorator of the function
  */
 export function ContentType<T extends Constructable>(contentType: MessageType) {
-	return function (target: T): T {
-		Reflect.defineMetadata(
-			HTTP_CONTENT_TYPE_METADATA_KEY,
-			contentType,
-			target.prototype
-		);
-		return target;
-	};
+	return StaticResponseHeader('Content-Type').Set<T>(contentType);
 }

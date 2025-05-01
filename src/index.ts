@@ -64,3 +64,29 @@ export { Meta, SerializerMetaInfo } from './Serializer/SerializerMetaInfo';
 export { Transform } from './Serializer/Transform';
 export { JSONSerializableArray } from './Serializer/SerializableDataStructures';
 export { TransactionManager } from './ExchangeUtils/TransactionManager';
+
+/**
+ * Headers related content
+ */
+
+export { StaticResponseHeader } from './HttpUtils/Headers/Header';
+export {
+	HeaderNames,
+	NoCookiesHeaderNames,
+} from './HttpUtils/Headers/HeadersDef';
+export {
+	HeaderBuilder,
+	HeaderBuilderInterface,
+} from './HttpUtils/Headers/HeaderBuilder';
+
+/** Cookies */
+export {
+	Cookie,
+	SameSite,
+	CookieOptions,
+	RawCookieOptions,
+} from './HttpUtils/Cookies/Cookie';
+export { SetCookie } from './HttpUtils/Cookies/SetCookie';
+export { DynamicCookie } from './HttpUtils/Cookies/DynamicCookie';
+export { CookieTimeFrame } from './HttpUtils/Cookies/CookieTimeFrame';
+export { ResponseCookieManager } from './HttpUtils/Cookies/ResponseCookiesManager';
