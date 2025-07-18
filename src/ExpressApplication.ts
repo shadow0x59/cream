@@ -127,6 +127,7 @@ export class ExpressApplication {
 
 		let middlewareList = currInstance.middlewareList.map(
 			(instance: BaseMiddleware) => {
+				instance.app = this; // Set the app reference for the middleware
 				return instance.handle.bind(instance);
 			}
 		);
@@ -135,6 +136,12 @@ export class ExpressApplication {
 			this.app.use(currInstance.baseUrl, middlewareList);
 		}
 		this.app.use(currInstance.baseUrl, currInstance.router);
+		console.log(
+			'Registered controller',
+			currInstance.className,
+			'to',
+			currInstance.baseUrl
+		);
 
 		currInstance.app = this;
 	}

@@ -16,6 +16,7 @@
 
 import { NextFunction, Request, Response } from 'express';
 import { RestError } from '../ExpressErrorHandler/ExpressErrorHandler';
+import { ExpressApplication } from '../ExpressApplication';
 
 /**
  * @internal
@@ -39,6 +40,7 @@ export interface ExtendedRequest extends Request {
 	 * to the endpoint
 	 */
 	middlewareDataCollections?: MiddlewareDataCollections;
+	expressApp: ExpressApplication;
 }
 
 /**
@@ -53,6 +55,7 @@ export interface ExtendedRequest extends Request {
  * it will only create more confusion than there already is
  */
 export interface BaseMiddleware {
+	app: ExpressApplication;
 	/**
 	 * @internal
 	 * This method is for handling requests coming from the user.
@@ -76,6 +79,8 @@ export interface BaseMiddleware {
  * to make it simpler for users.
  */
 export abstract class AsyncExpressMiddleware<T> implements BaseMiddleware {
+	app!: ExpressApplication;
+
 	/**
 	 * This is the method that your custom middleware should implement.
 	 * This method will communicate to the user by returning the collection for
@@ -138,6 +143,8 @@ export abstract class AsyncExpressMiddleware<T> implements BaseMiddleware {
  * to make it simpler for users.
  */
 export abstract class ExpressMiddleware implements BaseMiddleware {
+	app!: ExpressApplication;
+
 	/**
 	 * This is the method that your custom middleware should implement.
 	 * This method will communicate to the user by returning the collection for
@@ -173,6 +180,7 @@ export abstract class ExpressMiddleware implements BaseMiddleware {
 	 */
 	handle(req: ExtendedRequest, res: Response, next: NextFunction) {
 		try {
+			this.app = req.expressApp as ExpressApplication;
 			let data: MiddlewareReturnData = this.behaviour(req, res);
 			let collections: MiddlewareDataCollections =
 				req.middlewareDataCollections || new Map();
