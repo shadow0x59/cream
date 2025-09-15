@@ -281,6 +281,173 @@ Now if we go again to http://localhost:4040/hello-world/my%20hello we will not s
 }
 ```
 
+## Headers
+
+HTTP Requests and Responses are characterized not only by a body and a URL but also by headers that are fundamental for the transmission. Such headers include Content-Length that is a must-have in order for the receiver to fully parse the data.
+
+Some headers are automatically computed by Express (which Cream is based on) like Content-Length, but others can be set by the programmer, like Authorization or [Cookies](#Cookies).
+
+The client sends headers, too, in fact Authorization is generally sent by the client and then consumed by the server.
+
+### Reading request headers
+
+The API to read headers sent by client is pretty much straigthforward. Since generally a functionality is dependant on the header value it can be seen as a input to such functionality. In programming passing inputs to a function is done with function parameters thus the header will be mapped to the desired parameter, like UrlParameter works.
+
+For example now we will get the Authorization header that is set by the client:
+
+```ts
+import { ExpressController, Get } from '@creamapi/cream';
+
+@ExpressController('/')
+export class HelloController extends ExpressModule {
+	@Get('/hello-header')
+	public helloPrinter(
+		@Header('Authorization') authorization: string
+	): string {
+		return 'Authorization:' + authorization;
+	}
+}
+```
+
+### Writing headers to the client
+
+> This feature is available only for Cream 1.4.0+
+
+Writing headers to the client is a bit more difficult than reading them. Headers are generally bound to data thus in Cream response headers are set in a view like `class HelloView`. In fact lets rewrite it to use headers:
+
+File: _HelloView.ts_
+
+```ts
+import {
+	Serializable,
+	CreamSerializers,
+	AutoMap,
+	MapTo,
+	HttpReturnCode,
+	ContentType,
+	Transform,
+} from '@creamapi/cream';
+
+@(StaticResponseHeader('Accept-Encoding').Set('gzip'))
+@(StaticResponseHeader('Accept-Encoding').Append('deflate'))
+@HttpReturnCode(200)
+@ContentType('application/json')
+@Serializable(CreamSerializers.JSON)
+class HelloView {
+	@AutoMap
+	get stringLength(): number {
+		return this.stringData.length;
+	}
+
+	@MapTo('userData')
+	public stringData: string;
+
+	@Transform((data: number) => data.toString(2))
+	@MapTo('binaryNum')
+	dataNum: number = 2;
+
+	otherData: number;
+
+	constructor(userString) {
+		this.stringData = stringData;
+	}
+}
+```
+
+Static headers can be set in two ways that can be both seen in the example above:
+
+-   `StaticResponseHeader.Set`: sets a unique value to the header overwriting old data.
+-   `StaticResponseHeader.Append`: appends a value to the header treating it as an array.
+
+> Setting headers dynamically is not supported yet, but it is planned in the near future.
+
+## Cookies
+
+> This feature is available only for Cream 1.4.0+
+
+Now we want to save some data onto the user machine for later use; in web there are a few tecniques to accomplish such task, beginning from the newest we have:
+
+-   **IndexedDB**: which is used to store a lot of complex and structured data directly on the client (for example, to implement an offline application that stores all the requests that will be processed once the application goes online);
+-   **Web Storage**: that is divided in localStorage (for persistent user data) and sessionStorage (for session data only, that will be deleted once the session has ended);
+-   **_Cookies_**: the classic method to set data onto the user machine.
+
+> The first two techniques while more modern require a complex frontend to be used and data cannot be directly controlled by the server. Cookies do not require any code on the frontend since they are automatically managed by the browser.
+>
+> This and the fact that cookies are widely used to manage user sessions and tracking information (and well, they are defined by the HTTP standard) made me implement a complete, secure and explicit by design Cookie API.
+
+Now we will use the previous example and add cookies logic to set some data on the client's machine (browser to be correct) then retrieve such data and use it for processing.
+
+File: _HelloView.ts_
+
+```ts
+import {
+	Serializable,
+	CreamSerializers,
+	AutoMap,
+	MapTo,
+	HttpReturnCode,
+	ContentType,
+	Transform,
+	SetCookie,
+	DynamicCookie,
+} from '@creamapi/cream';
+
+@SetCookie('static-cookie', 'static-data', {
+	MaxAge: (timeFrame: CookieTimeFrame) =>
+		timeFrame.fromNow().willEndIn(3600 * 1000), // Will end in 1h
+	Domain: 'localhost',
+})
+@HttpReturnCode(200)
+@ContentType('application/json')
+@Serializable(CreamSerializers.JSON)
+class HelloView {
+	@AutoMap
+	get stringLength(): number {
+		return this.stringData.length;
+	}
+
+	@MapTo('userData')
+	public stringData: string;
+
+	@Transform((data: number) => data.toString(2))
+	@MapTo('binaryNum')
+	dataNum: number = 2;
+
+	@DynamicCookie('testCookie', {
+		MaxAge: (tf: CookieTimeFrame) => tf.fromNow().willEndIn(1200 * 1000),
+	})
+	cookie: string = 'changable-value';
+
+	otherData: number;
+
+	constructor(userString) {
+		this.stringData = stringData;
+		this.cookie = stringData + ' as cookie';
+	}
+}
+```
+
+We can see in this example that there are two types of cookies, `SetCookie` and `DynamicCookie`.
+
+### SetCookie
+
+`SetCookie` is used when we want to set a static cookie that is invariant from the data exchanged by the user, _for example a randomly generated session ID cookie_.
+
+### DynamicCookie
+
+`DynamicCookie` is used when the data stored changes with the user's request, _for example a shopping cart that can change when a user adds an item to it or removes an item from it_. In this case
+
+Cookies (either static or dynamic) have many options to be set: `Path`, `MaxAge`, `Domain`, `Secure`, `HttpOnly`, `SameSite`, `Partitioned`. See the Cookie documentation for further detail, along with the [MDN documentation on Cookies](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Cookies).
+
+### A word on MaxAge and Expires
+
+A experienced developer will notice that `Expires` is missing, this is due to the fact that it is not suggested to use it and modern browsers will prefer `MaxAge` over it even if both are set. `Expires` uses dates to tell the client when the cookie expires and such dates are generally relative to the server timezone thus the client receives a wrong expiry date.  
+`MaxAge` instead uses milliseconds to tell the client in how much time the cookie will expire, ignoring timezones and providing more precise timings.
+
+> Cream will set both to provide compatibility with older browsers whilst modern browsers will just ignore `Expires` and will use `MaxAge` by default.
+
+To set `MaxAge` and to provide correct timings the user cannot set delta time immediately, like in the example the user must use a lambda function that takes a CookieTimeFrame as an argument, a helper class that is used to provide a starting time and an expiry in delta.
+
 ## Continuing
 
 To expand our REST API we also need to receive more complex data from the user, but this topic, how to handle different HTTP requests, is covered in the ~~[User Guide](public/index.html)~~ user guide that still has to be written, for now refer only to the [Documentation](#documentation).

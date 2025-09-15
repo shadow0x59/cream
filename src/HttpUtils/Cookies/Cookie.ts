@@ -47,18 +47,17 @@ export type RawCookieOptions = {
  * For a more detailed documentation please refer to MDN Docs:
  * https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Cookies
  *
+ * The expiration of a cookie can be set only by using an `ExpiryFunction`.\
+ * The reason behind this is that the expiry function will provide you, the user,
+ * with an already instanciated {@link CookieTimeFrame} and the user will only need to
+ * define the start of the timeframe and its end.
+ *
+ * @note Also some other stuff can be done in this function. The only thing is that
+ * `this` is probably undefined or has a undefined behaviour and it is recommended not
+ * to do it.
  */
 export type CookieOptions = {
 	Path?: string;
-	/**
-	 * The expiration of a cookie can be set only by using an `ExpiryFunction`.\
-	 * The reason behind this is that the expiry function will provide you, the user,
-	 * with an already instanciated {@link CookieTimeFrame} and the user will only need to
-	 * define the start of the timeframe and its end.
-	 *
-	 * Also some other stuff can be done in this function. The only thing is that
-	 * `this` is probably undefined or has a undefined behaviour.
-	 */
 	MaxAge?: ExpiryFunction;
 	Domain?: string;
 	Secure?: boolean;
