@@ -54,6 +54,8 @@ To create your own API with Cream it is easy! You just need to setup a few thing
 -   [Handling Complex Objects](#handling-complex-objects)
     -   [Handling data coming from the client](#handling-data-coming-from-the-client)
     -   [Returning complex objects](#returning-complex-objects)
+-   [Headers](#headers)
+-   [Cookies](#cookies)
 -   [Continuing](#continuing)
 
 ## Documentation
