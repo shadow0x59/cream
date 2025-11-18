@@ -57,6 +57,7 @@ class MockMiddleware extends ExpressMiddleware {
 	): MiddlewareReturnData {
 		return new MiddlewareReturnData('myMockedMiddleware', {
 			myMiddlewareData: 'string',
+			isAppUndefined: this.app == undefined,
 		});
 	}
 }

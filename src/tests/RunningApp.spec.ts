@@ -113,7 +113,7 @@ class CascadedGenericMiddleware extends ExpressMiddleware {
 		res: Response
 	): MiddlewareReturnData<{}> {
 		return new MiddlewareReturnData(undefined, {
-			mySecondContent: 'secondData',
+			mySecondContent: 'secondData,app=' + (this.app != undefined),
 		});
 	}
 }
@@ -381,7 +381,7 @@ describe('Testing parameter binding and middlewares running', () => {
 		);
 		expect(res.status).toBe(200);
 		expect(res.body.myContent).toBeUndefined();
-		expect(res.body.mySecondContent).toBe('secondData');
+		expect(res.body.mySecondContent).toBe('secondData,app=true');
 	});
 
 	it('Should not throw on sent data and return body with the correct missing information', async () => {

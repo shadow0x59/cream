@@ -126,10 +126,7 @@ export class ExpressApplication {
 			.get(controller.className)!;
 
 		let middlewareList = currInstance.middlewareList.map(
-			(instance: BaseMiddleware) => {
-				instance.app = this; // Set the app reference for the middleware
-				return instance.handle.bind(instance);
-			}
+			(instance: BaseMiddleware) => instance.handle.bind(instance)
 		);
 
 		if (middlewareList.length > 0) {

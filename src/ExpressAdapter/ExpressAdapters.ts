@@ -429,6 +429,9 @@ export function ExpressController<
 			private initRoute(route: Route) {
 				let expressRoute = this.router.route(route.route);
 				let expressRouteParams: any[] = route.getMiddlewareMethods();
+				this.methodsMiddlewareList = this.methodsMiddlewareList.concat(
+					route.middlewares
+				);
 				expressRouteParams.push(route.method(this));
 				switch (route.httpMethod) {
 					case HttpMethod.GET:

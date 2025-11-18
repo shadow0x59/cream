@@ -55,10 +55,20 @@ export class ExpressModule {
 	private _app!: ExpressApplication;
 
 	/**
-	 * @param middlewareList The list of  controller-wise middlewares associated
+	 * The list of  controller-wise middlewares associated
 	 * with the controller. The method-associated middlewares will not appear in this list
 	 */
-	constructor(public middlewareList: BaseMiddlewares = []) {
+	public middlewareList: BaseMiddlewares;
+
+	/**
+	 * The list of  method-associated middlewares associated
+	 * with the controller. The controller-wise middlewares will not appear in this list
+	 */
+	public methodsMiddlewareList: BaseMiddlewares;
+
+	constructor() {
+		this.middlewareList = [];
+		this.methodsMiddlewareList = [];
 		this.router = Router();
 		this.baseUrl = '/';
 		this.className = '';
@@ -66,6 +76,12 @@ export class ExpressModule {
 
 	public set app(v: ExpressApplication) {
 		this._app = v;
+		for (let middleware of this.middlewareList) {
+			middleware.app = v;
+		}
+		for (let middleware of this.methodsMiddlewareList) {
+			middleware.app = v;
+		}
 	}
 
 	public get app(): ExpressApplication {

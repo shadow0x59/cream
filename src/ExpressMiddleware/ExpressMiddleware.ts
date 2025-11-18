@@ -40,7 +40,6 @@ export interface ExtendedRequest extends Request {
 	 * to the endpoint
 	 */
 	middlewareDataCollections?: MiddlewareDataCollections;
-	expressApp: ExpressApplication;
 }
 
 /**
@@ -180,7 +179,6 @@ export abstract class ExpressMiddleware implements BaseMiddleware {
 	 */
 	handle(req: ExtendedRequest, res: Response, next: NextFunction) {
 		try {
-			this.app = req.expressApp as ExpressApplication;
 			let data: MiddlewareReturnData = this.behaviour(req, res);
 			let collections: MiddlewareDataCollections =
 				req.middlewareDataCollections || new Map();

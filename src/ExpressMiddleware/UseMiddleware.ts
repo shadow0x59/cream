@@ -32,7 +32,8 @@ export function UseMiddlewaresForController<
 	return function (target: T): T {
 		return class extends target {
 			constructor(...args: any[]) {
-				super(middlewares);
+				super(...args);
+				this.middlewareList = middlewares;
 			}
 		};
 	};
