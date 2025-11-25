@@ -35,7 +35,7 @@ If express is not installed:
 npm install express @types/express @creamapi/cream
 ```
 
-If you've already installed expreess:
+If you've already installed exprees:
 
 ```bash
 npm install @creamapi/cream
@@ -44,6 +44,7 @@ npm install @creamapi/cream
 # Usage
 
 > Note: These examples use TypeScript, in order to follow them please setup a TS project.
+> Also you need to have experimental decorators on in your tsconfig.
 
 To create your own API with Cream it is easy! You just need to setup a few things then you can play with it with ease.
 
@@ -56,6 +57,7 @@ To create your own API with Cream it is easy! You just need to setup a few thing
     -   [Returning complex objects](#returning-complex-objects)
 -   [Headers](#headers)
 -   [Cookies](#cookies)
+-   [Services](#services)
 -   [Continuing](#continuing)
 
 ## Documentation
@@ -449,6 +451,408 @@ A experienced developer will notice that `Expires` is missing, this is due to th
 > Cream will set both to provide compatibility with older browsers whilst modern browsers will just ignore `Expires` and will use `MaxAge` by default.
 
 To set `MaxAge` and to provide correct timings the user cannot set delta time immediately, like in the example the user must use a lambda function that takes a CookieTimeFrame as an argument, a helper class that is used to provide a starting time and an expiry in delta.
+
+## Services
+
+Services are a collection of, well, services that are globally available within the application. The concept of a `service` in Cream can be defined as:
+
+-   **a component that is used to interconnect controllers**. For example lets think of a waiting queue, a matchmaking process;
+-   **a component that provides functionality throughout the hole API**, like a user service that provides database access to user data for the whole API, a service to generate and verify JWT tokens or simply a logging service;
+-   **a component that manages connections with external actors**, like a Rabbit MQ broker or a service that manages DB connections;
+-   in general anything that needs to be globally accessible and shareable.
+
+To understand better the usage of services and to see a clear example on how Cream works please refer to the next chapter.
+
+## A simple use case of Cream
+
+Now let's ditch over what we have built so far and let's implement an application that is a bit more complex, _just enough to make a clear example on how to use Cream_.
+
+> Please note that this is not only the intended way to use Cream, your creativity is the only limit ... and Javascript 😃
+
+We want to build a pull based chat system, this means that the user will receive the messages only when they explicitly request the API. The reason is that this is not a tutorial on how to use a WebSocket to build a chatting system so we have to stick with pull-based HTTP requests.
+
+To create the system we need:
+
+1. an authentication system to provide identity to users;
+2. a chatting mechanism to allow users to chat;
+3. ideally a way to make chats persistent.
+
+We can skip point 3 since it is more of a storage issue rather than an API issue and there a new set of problems involving that part which are not covered by Cream (databases exist for a reason).
+
+### User Management and Authentication
+
+Point 1 can get complex so we simplify things a little bit, but before going on with the example please read carefully the following:
+
+> DISCLAIMER: DO NOT TAKE THIS TUTORIAL AS GOOD PRACTICE FOR AUTHENTICATION AND AUTHORIZATION PROTOCOLS AND POLICIES, THIS IS JUST A OVERSEMPLIFICATION OF WHAT A REAL AUTHENTICATION SYSTEM SHOULD BE, BUILT ONLY FOR EDUCATIONAL PURPOSES. **_NONE OF THE AUTHORS NOR THE CONTRIBUTORS TAKE ANY RESPONSIBILITY IN HARMFUL RESULTS OF USING THE FOLLOWINIG CODE IN PRODUCTION ENVIRONMENTS_**
+
+We can build a simple authentication system that just allows the users to register and store eveything in memory (username and password). For the login part we can just return the user id if the login is successful, otherwise we can return a 401 Unauthorized message.
+
+File: _user.service.ts_
+
+```ts
+import {
+	ExpressService,
+	RestError,
+	CreamSerializers,
+	Serializable,
+	HttpReturnCode,
+	AutoMap,
+} from '@creamapi/cream';
+
+@Serializable(CreamSerializers.JSON)
+@HttpReturnCode(200)
+export class UserData {
+	constructor(userId: number, username: string, password: string) {
+		this.userId = userId;
+		this.username = username;
+		this.password = password;
+		this.newMessages = 0;
+	}
+
+	@AutoMap
+	public userId: number;
+
+	@AutoMap
+	public username: string;
+
+	private password: string; // we don't want to be visible when we fetch the user information
+
+	public bool matchesPassword(pwd: string): boolean {
+		return this.password == password;
+	}
+
+	@AutoMap
+	newMessages: number;
+}
+
+@ExpressService.IdentifiedBy('my-user-service')
+export class UserService extends ExpressService {
+	private usersMap: Map<string, UserData>;
+	private userIdInc: number;
+
+	constructor() {
+		this.usersMap = new Map<string, UserData>();
+		this.userIdInc = 0;
+	}
+
+	async init(): Promise<boolean> {
+		return true;
+	}
+
+	public registerUser(username: string, password: string): UserData {
+		if (this.usersMap.get(username)) {
+			throw new RestError('Username already registered', 400);
+		}
+
+		this.usersMap.set(
+			username,
+			new UserData(this.userIdInc++, username, password)
+		);
+
+		return this.usersMap.get(username)!;
+	}
+
+	public loginUser(username: string, password: string): UserData {
+		let userData: UserData | undefined = this.usersMap.get(username);
+		if (userData == undefined) {
+			throw new RestError('Unable to find user', 404);
+		}
+
+		if (!userData!.matchesPassword(password)) {
+			throw new RestError('Invalid password', 401);
+		}
+
+		return userData!;
+	}
+
+	public getUserFromId(userId: string): UserData {
+		for (let [username, user] of this.usersMap) {
+			if (user.userId == userId) return user;
+		}
+
+		throw new RestError(
+			'User with id ' + userId + ' could not be found',
+			500
+		);
+	}
+}
+```
+
+> A side note: in this example concurrency is not managed in any way. because this is a tutorial and has to be kept simple plus there are no synchronization primitives in TS/JS by default. I am tempted to implement them by myself, but there is already a library doing it, [async-ts](https://www.npmjs.com/package/async-ts), I haven't used it yet so I cannot give any reccomentadion for it, nor say anything bad about it.
+
+This is a good example of how to create a service in Cream. In general we need two main things: our class has to extend `ExpressService` and then we have to identify this class by a unique identifier with `ExpressService.IdenfitiedBy` decorator.
+
+The reason for having to manually put the identifier is for having a bit of control over the service system, for example when testing it is useful to have a mock instance of a service that replaces the original, without changing the application code.
+
+`ExpressService` requires that the `class` extending it defines the method `init()` _which is by default asynchronous, even when no async is needed_. This method is used to setup the services and the advantage over using the `constructor` is that the point in time when this method is called is well known. It happens after calling `ExpressApplication.start()` and the underlying `expressjs.listen()` call. Also services are guaranteed to be initialized sequencially, following the insertion order.
+
+> This behaviour is likely to change in the future with the introduction of service dependencies, that will introduce initalization parallelism when possible and guarantee initialization order when circularity is not a problem, but this topic is for future discussion, see issue for more information or to leave your opinions/ideas.
+
+This service per se is pretty useless, let's now add a controller that interacts with the user via a REST API:
+
+File: _user.controller.ts_
+
+```ts
+import { ExpressModule, ExpressController, Get, Post } from '@creamapi/cream';
+import { UserData, UserService } from './user.service';
+
+@ExpressController('/user')
+export class UserController extends ExpressModule {
+	@Post('/register')
+	public register(
+		@BodyParam('username') username: string,
+		@BodyParam('password') password: string
+	): UserData {
+		return this.app
+			.getService(UserService)
+			.registerUser(username, password);
+	}
+
+	@Post('/login')
+	public login(
+		@BodyParam('username') username: string,
+		@BodyParam('password') password: string
+	): UserData {
+		return this.app.getService(UserService).loginUser(username, password);
+	}
+}
+```
+
+The `app` class member is automatically injected to the controller and and refers to the `ExpressApplication` that this controller is registered to (we will see this part later).  
+In general this is how `services` are used, they provide a service that other `controllers`, `services` and `middlewares` can use.
+
+### Chatting system
+
+File: _chat.service.ts_
+
+```ts
+import {
+	ExpressService,
+	RestError,
+	CreamSerializers,
+	Serializable,
+	HttpReturnCode,
+	AutoMap,
+	ContentType,
+} from '@creamapi/cream';
+import { UserData, UserService } from './user.service';
+
+@Serializable(CreamSerializers.JSON)
+export class Message {
+	constructor(sender: UserData, message: string) {
+		this.sender = sender;
+		this.message = message;
+	}
+
+	@AutoMap
+	public sender: UserData;
+
+	@AutoMap
+	public message: string;
+}
+
+@Serializable(CreamSerializers.JSON)
+@ContentType('application/json')
+@HttpReturnCode(200)
+export class ChatData {
+	constructor(chatId: number, chatMembers: UserData[]) {
+		this.chatId = chatId;
+		for (let member of chatMembers) {
+			this.chatMembers.set(member.userId, member);
+		}
+		this.messages = [];
+	}
+
+	public userJoin(user: UserData) {
+		this.chatMembers.set(user.userId, user); // we assume that there is no duplicated ID
+	}
+
+	public hasUser(userId: number): boolean {
+		return this.chatMembers.get(userId) != undefined;
+	}
+
+	public postMessage(sender: UserData, message: string): void {
+		if (this.chatMembers.get(sender.userId) == undefined) {
+			throw new RestError('User is not in chat', 400);
+		}
+
+		this.messages.push(new Message(sender, message));
+		for (let [userId, user] of this.chatMembers) {
+			if (userId != sender.userId) {
+				user.newMessages++;
+			}
+		}
+	}
+
+	@AutoMap
+	public chatId: number;
+
+	@AutoMap
+	public chatMembers: Map<number, UserData>;
+
+	@AutoMap
+	public messages: Message[];
+}
+
+@ExpressService.IdentifiedBy('my-chat-service')
+export class ChatService extends ExpressService {
+	private chats: Map<number, ChatData>;
+	private chatIdInc: number;
+
+	// we can use this construct to simplify accesing the user service
+	private get userService(): UserService {
+		return this.app.getService(UserService)!;
+	}
+
+	constructor() {
+		this.chats = new Map<string, ChatData>();
+		this.chatIdInc = 0;
+	}
+
+	async init(): Promise<boolean> {
+		return true;
+	}
+
+	public createChat(creatorId: number) {
+		let creator: UserData = this.userService.getUserFromId(creatorId);
+		this.chatIdInc++;
+		this.chats.set(this.chatIdInc, new ChatData(this.chatIdInc, [creator]));
+		return this.getChat(this.chatIdInc);
+	}
+
+	public joinChat(chatId: number, userId: number): ChatData {
+		let chat: ChatData = this.getChat(chatId);
+		let user: UserData = this.userService.getUserFromId(userId);
+		chat.userJoin(user);
+		return chat;
+	}
+
+	public getAllChats(): ChatData[] {
+		let chats: ChatData[] = [];
+		for (let [_, chat] of this.chats) {
+			chats.push(chat);
+		}
+		return chats;
+	}
+
+	public getChat(chatId: number): ChatData {
+		let chat: ChatData | undefined = this.chats.get(chatId);
+		if (chat == undefined) {
+			throw new RestError('Could not find chat with provided id', 404);
+		}
+
+		return chat;
+	}
+
+	public getAllUserChats(userId: number): ChatData[] {
+		let userChats: ChatData[] = [];
+		for (let [chatId, chat] of this.chats) {
+			if (chat.hasUser(userId)) {
+				userChats.push(chat);
+			}
+		}
+		return userChats;
+	}
+
+	public publishMessage(
+		chatId: number,
+		senderId: number,
+		message: string
+	): ChatData {
+		let chat: ChatData = this.getChat(chatId);
+		let user: UserData = this.userService.getUserFromId(senderId);
+		chat.postMessage(user, message);
+		return chat;
+	}
+}
+```
+
+Here we have a clear example on the fact that `services` can interact with other `services`. Now to almost finish the chat system we have to build the `controller` to allow the user to interact with the chats.
+
+File: _chat.controller.ts_
+
+```ts
+import {
+	ExpressModule,
+	ExpressController,
+	Get,
+	Post,
+	Put,
+} from '@creamapi/cream';
+import { ChatData, ChatService } from './chat.service';
+
+@ExpressController('/chat')
+export class ChatController extends ExpressModule {
+	@Post('/create/:userId')
+	public createChat(@UrlParam('userId') userId: number): ChatData {
+		return this.app.getService(ChatService).createChat(userId);
+	}
+
+	@Put('/join/:chatId/:userId')
+	public joinChat(
+		@UrlParam('chatId') chatId: number,
+		@UrlParam('userId') userId: number
+	): ChatData {
+		return this.app.getService(ChatService).joinChat(chatId, userId);
+	}
+
+	@Get('/all')
+	public getAllChats(): JSONSerializableArray<ChatData> {
+		return new JSONSerializableArray<ChatData>(
+			this.app.getService(ChatService).getAllChats()
+		);
+	}
+
+	@Get('/one/:chatId')
+	public getOneChat(@UrlParameter('chatId') chatId: number): ChatData {
+		return this.app.getService(ChatService).getChat(chatId);
+	}
+
+	@Get('/for-user/:userId')
+	public getChatForUser(
+		@UrlParameter('userId') userId: number
+	): JSONSerializableArray<ChatData> {
+		return new JSONSerializableArray<ChatData>(
+			this.app.getService(ChatService).getAllUserChats(userId)
+		);
+	}
+}
+```
+
+### The Express Application
+
+Now we can finish our chat system by creating the main application and inserting the services and controllers.
+
+File: _chat.app.ts_
+
+```ts
+import { ExpressApplication } from '@creamapi/cream';
+import express from 'express';
+import { ChatService } from './chat.service';
+import { ChatController } from './chat.controller';
+import { UserService } from './user.service';
+import { UserController } from './user.controller';
+
+let expressBase = express();
+let chatApp = new ExpressApplication(express, 4040);
+
+chatApp.addControllers([
+	new ChatController(),
+	new UserController()
+]);
+
+chatApp.addServices([
+	new UserService();
+	new ChatService()
+]);
+
+chatApp.start();
+```
+
+This will open an API listening to port 4040 (http://localhost:4040).
+Services are created in dependency order, since they are initialized in the insertion order. This means that since ChatService needs UserService it needs to be initalized before.
+
+> A little note: the last statement is not precise. Dependencies matter only during initalization, since a service might require another service to correctly initalize. After a service is initalized it is available to be used whenever and by anyone.
 
 ## Continuing
 

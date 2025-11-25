@@ -141,14 +141,14 @@ describe('ExpressApplication Test Suite', () => {
 	});
 
 	it('Should return the service associated with myId', () => {
-		let gotService = mockInstance.getService<MyService>('MyId');
+		let gotService = mockInstance.getService(MyService);
 
 		expect(gotService).toEqual(myServiceInstance);
 	});
 
 	it('Should not allow me to register a service with the same Id', () => {
 		expect(() => mockInstance.addService(new WrongService())).toThrow();
-		let gotService = mockInstance.getService<MyService>('MyId');
+		let gotService = mockInstance.getService(MyService);
 
 		expect(gotService).toEqual(myServiceInstance);
 	});

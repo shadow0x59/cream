@@ -21,9 +21,11 @@ import { ExpressErrorHandler } from './ExpressErrorHandler/ExpressErrorHandler';
 import {
 	ExpressService,
 	ExpressServices,
+	SERVICE_ID_METADATA,
 } from './ExpressService/ExpressService';
 
 import { Server } from 'http';
+import { Constructable } from './Utils/Constructable';
 
 /**
  * This type is just for expressivity to identify
@@ -283,7 +285,11 @@ export class ExpressApplication {
 	 * @param serviceId the service identifier that is given with IdentifiedBy decorator
 	 * @returns the requested service or undefined if the service was not found
 	 */
-	public getService<T extends ExpressService>(serviceId: string) {
+	public getService<T extends ExpressService>(service: Constructable<T>) {
+		let serviceId: string = Reflect.getMetadata(
+			SERVICE_ID_METADATA,
+			service.prototype
+		);
 		return this.services.get(serviceId) as T;
 	}
 }

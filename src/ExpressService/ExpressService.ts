@@ -15,6 +15,8 @@
  */
 
 import { ExpressApplication } from '../ExpressApplication';
+import { Constructable } from '../Utils/Constructable';
+export const SERVICE_ID_METADATA = Symbol('cream:service:id');
 
 /**
  * This abstract class is used to declare a service for the app. <br>
@@ -29,11 +31,6 @@ export abstract class ExpressService {
 	 * the application owning the service
 	 */
 	private _app!: ExpressApplication;
-
-	/**
-	 * The id of the service. This id is used to retrieve the service from within the app
-	 */
-	private _id!: string;
 
 	/**
 	 * This method must be implemented to bootstrap the service.
@@ -61,7 +58,7 @@ export abstract class ExpressService {
 	 * This method is used to get the current identifier of the service
 	 */
 	public get id() {
-		return this._id;
+		return Reflect.getMetadata(SERVICE_ID_METADATA, this);
 	}
 
 	/**
@@ -70,16 +67,12 @@ export abstract class ExpressService {
 	 * @param id The identifier that uniquely identifies the service. Having multiple services with the same ID will give conflicts
 	 * @returns the decorator that will create a new class based from the service and will also set the identifier
 	 */
-	public static IdentifiedBy<T extends { new (...args: any[]): any }>(
+	public static IdentifiedBy<T extends Constructable<ExpressService>>(
 		id: string
 	) {
 		return function (target: T): T {
-			return class extends target {
-				constructor(...args: any[]) {
-					super(...args);
-					super._id = id;
-				}
-			};
+			Reflect.defineMetadata(SERVICE_ID_METADATA, id, target.prototype);
+			return target;
 		};
 	}
 }
