@@ -52,8 +52,8 @@ import { ParameterProp } from '../ExpressAdapter/ParameterProp';
 
 class MockMiddleware extends ExpressMiddleware {
 	public behaviour(
-		req: ExtendedRequest,
-		res: Response<any, Record<string, any>>
+		_req: ExtendedRequest,
+		_res: Response<any, Record<string, any>>
 	): MiddlewareReturnData {
 		return new MiddlewareReturnData('myMockedMiddleware', {
 			myMiddlewareData: 'string',
@@ -85,9 +85,13 @@ class TestCall3View {
 	field1: string;
 
 	@AutoMap
-	middlewareData?: string;
+	middlewareData?: string | undefined;
 
-	constructor(body: string, field1: string, middlewareData?: string) {
+	constructor(
+		body: string,
+		field1: string,
+		middlewareData?: string | undefined
+	) {
 		this.body = body;
 		this.field1 = field1;
 		this.middlewareData = middlewareData;
@@ -155,7 +159,7 @@ class MockController extends ExpressModule {
 		return new EmptyJson();
 	}
 
-	private normalMethod() {
+	public normalMethod() {
 		return 'normalData';
 	}
 
@@ -263,10 +267,10 @@ describe('ExpressController & ExpressMiddleware Test Suite', () => {
 		expect(bodyFields).toHaveLength(1);
 		expect(urlParams).toHaveLength(1);
 		expect(middlewareParams).toHaveLength(1);
-		expect(bodyFields[0].name).toBe(':body');
-		expect(urlParams[0].name).toBe('field1');
-		expect(middlewareParams[0].collection).toBe('myMockedMiddleware');
-		expect(middlewareParams[0].name).toBe('myMiddlewareData');
+		expect(bodyFields[0]!.name).toBe(':body');
+		expect(urlParams[0]!.name).toBe('field1');
+		expect(middlewareParams[0]!.collection).toBe('myMockedMiddleware');
+		expect(middlewareParams[0]!.name).toBe('myMiddlewareData');
 	});
 
 	it('Should throw RestError', () => {
@@ -279,6 +283,7 @@ describe('ExpressController & ExpressMiddleware Test Suite', () => {
 				@UseMiddleware(new MockMiddleware())
 				throwsError() {}
 			}
+			new FailingMock();
 		} catch (e) {
 			expect(e).toBeDefined();
 		}

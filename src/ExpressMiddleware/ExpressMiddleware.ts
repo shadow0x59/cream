@@ -78,7 +78,15 @@ export interface BaseMiddleware {
  * to make it simpler for users.
  */
 export abstract class AsyncExpressMiddleware<T> implements BaseMiddleware {
-	app!: ExpressApplication;
+	private _app!: ExpressApplication;
+
+	public get app(): ExpressApplication {
+		return this._app;
+	}
+
+	private set app(app: ExpressApplication) {
+		this._app = app;
+	}
 
 	/**
 	 * This is the method that your custom middleware should implement.
@@ -142,8 +150,15 @@ export abstract class AsyncExpressMiddleware<T> implements BaseMiddleware {
  * to make it simpler for users.
  */
 export abstract class ExpressMiddleware implements BaseMiddleware {
-	app!: ExpressApplication;
+	private _app!: ExpressApplication;
 
+	public get app(): ExpressApplication {
+		return this._app;
+	}
+
+	private set app(app: ExpressApplication) {
+		this._app = app;
+	}
 	/**
 	 * This is the method that your custom middleware should implement.
 	 * This method will communicate to the user by returning the collection for

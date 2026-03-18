@@ -89,7 +89,7 @@ export function ExpressCall<T extends ExpressModule>(
 		descriptor: PropertyDescriptor
 	) {
 		let method = descriptor.value!;
-		let methodTransactionManager = new TransactionManager(method, target);
+		let methodTransactionManager = new TransactionManager();
 		Reflect.defineMetadata(
 			TRANSACTION_MANAGER_METADATA_KEY,
 			methodTransactionManager,
@@ -141,7 +141,7 @@ export function ExpressCall<T extends ExpressModule>(
 
 					// I want to reset the transaction manager here to guarantee that
 					// it is always in the standard state
-					methodTransactionManager.reset(thisArg);
+					methodTransactionManager.reset();
 
 					let result = await method.apply(
 						thisArg,

@@ -5,7 +5,7 @@
 ![GitLab Contributors](https://img.shields.io/gitlab/contributors/worklog1%2Fcream)
 ![NPM Version](https://img.shields.io/npm/v/%40creamapi%2Fcream)
 
-<a href="https://www.buymeacoffee.com/shadow0x59" target="_blank"><img heigth="60" src="https://cdn.buymeacoffee.com/buttons/v2/default-violet.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 115px !important; height: 30px !important;" ></a>
+<a href="https://www.buymeacoffee.com/shadow0x59" target="_blank"><img heigth="60" src="https://cdn.buymeacoffee.com/buttons/v2/default-violet.png" alt="Buy Me A Coffee" style="width: 115px !important; height: 30px !important;" ></a>
 
 # Cream - A Library For Semi-Declarative REST API Creation
 
@@ -48,7 +48,7 @@ npm install @creamapi/cream
 
 To create your own API with Cream it is easy! You just need to setup a few things then you can play with it with ease.
 
-### Index
+## Index
 
 -   [API Documentation](#documentation)
 -   [First Steps](#first-steps)
@@ -664,7 +664,7 @@ export class ChatData {
 	}
 
 	public userJoin(user: UserData) {
-		this.chatMembers.set(user.userId, user); // we assume that there is no duplicated ID
+		this.chatMembers.set(user.userId, user); // we assume that there are no duplicate IDs
 	}
 
 	public hasUser(userId: number): boolean {
@@ -698,6 +698,7 @@ export class ChatData {
 export class ChatService extends ExpressService {
 	private chats: Map<number, ChatData>;
 	private chatIdInc: number;
+	private serverUserData: UserData;
 
 	// we can use this construct to simplify accesing the user service
 	private get userService(): UserService {
@@ -707,6 +708,7 @@ export class ChatService extends ExpressService {
 	constructor() {
 		this.chats = new Map<string, ChatData>();
 		this.chatIdInc = 0;
+		this.serverUserData = new UserData(-1, 'server', '');
 	}
 
 	async init(): Promise<boolean> {
@@ -716,7 +718,10 @@ export class ChatService extends ExpressService {
 	public createChat(creatorId: number) {
 		let creator: UserData = this.userService.getUserFromId(creatorId);
 		this.chatIdInc++;
-		this.chats.set(this.chatIdInc, new ChatData(this.chatIdInc, [creator]));
+		this.chats.set(
+			this.chatIdInc,
+			new ChatData(this.chatIdInc, [server, creator])
+		);
 		return this.getChat(this.chatIdInc);
 	}
 
@@ -854,6 +859,126 @@ Services are created in dependency order, since they are initialized in the inse
 
 > A little note: the last statement is not precise. Dependencies matter only during initalization, since a service might require another service to correctly initalize. After a service is initalized it is available to be used whenever and by anyone.
 
+## Gracefully Stopping The Server
+
+It is really important to handle the last few instances of the lifetime of a server. Imagine that we want to upgrade our current
+API with a new one, we first need to stop the old one, it requires a bit of effort: we need to reject incoming requests, we need
+to wait for long processes to complete, we need to close the database connections or whatever critical needs to be done.
+
+This procedure is generally called the _Graceful Shutdown Procedure_ because it allows the server to properly stop without causing any damage to the system.
+In Cream this procedure is supported by default and gives the user a bit of customization tools to adapt to all situations. The only thing is that, whilst is supported by default, it is not enabled by default and has to be done manually with two simple calls.
+
+Reusing the example from before we now have in our _chat.app.ts_:
+File: _chat.app.ts_
+
+```ts
+import { ExpressApplication } from '@creamapi/cream';
+import express from 'express';
+import { ChatService } from './chat.service';
+import { ChatController } from './chat.controller';
+import { UserService } from './user.service';
+import { UserController } from './user.controller';
+
+let expressBase = express();
+let chatApp = new ExpressApplication(express, 4040);
+
+chatApp.addControllers([
+	new ChatController(),
+	new UserController()
+]);
+
+chatApp.addServices([
+	new UserService();
+	new ChatService()
+]);
+
+chatApp.registerStopOnSigInt();
+chatApp.registerStopOnSigTerm();
+chatApp.start();
+```
+
+Both `ExpressApplication.registerStopOnSigInt` and `ExpressApplication.registerStopOnSigTerm` will make the current process listen for `SIGINT` and `SIGTERM` and then call `ExpressApplication.stop`.
+
+The `stop` method will then act in 3 steps:
+
+-   it will run the before-stop hooks
+-   it will stop the http server associated with express so it won't accept any new request
+-   it will run the after-stop hooks
+
+### Before and After Stop Hooks
+
+The customization comes from the fact that the hooks are user defined (in fact Cream does not define any hook) and to register the hook it is as simple as calling `ExpressApplication.addAfterStopHook` and `ExpressApplication.addBeforeStopHook`.  
+The hook to be added must implement respectively `AfterStopHook` and `BeforeStopHook` interfaces (so yes, it has to be a class).
+
+> Note that Cream will not provide any reference to the ExpressApplication to the hooks, it has to be done manually by the user or the hook can be one of `ExpressService`, a _**registered**_ `ExpressController` or a `ExpressMiddleware`.
+
+Again, let's edit the last example with this new functionality
+
+_chat.service.ts_
+
+```ts
+// [...]
+@ExpressService.IdentifiedBy('my-chat-service')
+export class ChatService
+	extends ExpressService
+	implements BeforeStopHook, AfterStopHook
+{
+	private chats: Map<number, ChatData>;
+	private chatIdInc: number;
+	private serverUserData: UserData;
+
+	constructor() {
+		this.chats = new Map<string, ChatData>();
+		this.chatIdInc = 0;
+		this.serverUserData = new UserData(-1, 'server', '');
+	}
+
+	// we will see only the new features in the class and the most important methods, the others will not change
+
+	async init(): Promise<boolean> {
+		return true;
+	}
+
+	public publishMessage(
+		chatId: number,
+		senderId: number,
+		message: string
+	): ChatData {
+		let chat: ChatData = this.getChat(chatId);
+		let user: UserData = this.userService.getUserFromId(senderId);
+		chat.postMessage(user, message);
+		return chat;
+	}
+
+	private waitFor(millis: number): Promise<void> {
+		return new Promise<void>((resolve) => setTimeout(resolve, millis));
+	}
+
+	private postToAll(message: string) {
+		for (let chat of this.chats) {
+			chat.postMessage(this.serverUserData, message);
+		}
+	}
+
+	public async beforeStop() {
+		this.postToAll('Server closing in 1 min...');
+		await this.waitFor(30000); // wait for half the time
+		this.postToAll('Server closing in 30 seconds...');
+		await this.waitFor(25000);
+		this.postToAll('Server closing in 5 seconds...');
+		await this.waitFor(5000);
+		this.postToAll('Server is closing now');
+		this.rejectIncomingMessages(); // this method does not exist but imagine that it rejects all connections with a custom message until the server is stopped
+	}
+
+	public async afterStop() {
+		// We can imagine that we have a way to persist, for example in a file, the user data and the chats data
+		await this.persistUserData();
+		await this.persistChatData();
+	}
+}
+```
+
 ## Continuing
 
 To expand our REST API we also need to receive more complex data from the user, but this topic, how to handle different HTTP requests, is covered in the ~~[User Guide](public/index.html)~~ user guide that still has to be written, for now refer only to the [Documentation](#documentation).
@@ -861,7 +986,7 @@ To expand our REST API we also need to receive more complex data from the user, 
 # Comparing it with Express
 
 Let's start from a easy task: return an array of tokens given a string separated by a empty space (only space, tabs and new lines not included)
-An example: given the string `"Hello, World!  "` we have the following result
+An example: given the string `"Hello, World!  "` we have the following result (we have two spaces at the end of our string)
 
 ```json
 ["Hello,", "World", "", ""]
@@ -870,18 +995,17 @@ An example: given the string `"Hello, World!  "` we have the following result
 In ExpressJS it is easily done (for simplicity lets use a GET request) like this
 
 ```ts
-import "express" from express;
+import express from 'express';
 
 let app = express();
 
 app.use(express.json());
 
-app.get("/tokenize/:data", (res, req)=>{
-    req.send(res.params.data.split(" "));
+app.get('/tokenize/:data', (res, req) => {
+	req.send(res.params.data.split(' '));
 });
 
 app.listen(4040);
-
 ```
 
 With Cream it would look more like this
@@ -908,7 +1032,7 @@ class MyController extends ExpressModule {
 			throw new RestError('Data is of length 0', 400);
 		}
 
-		// any other error will be treated as a 500 Internal Server Error
+		// any other error will be treated as a 500 Internal Server Error by default
 		return new JSONSerializableArray(data.split(' '));
 	}
 }

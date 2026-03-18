@@ -25,6 +25,10 @@ import {
 	UseMiddlewaresForController,
 	MiddlewareReturnData,
 	ExtendedRequest,
+	AfterStopHook,
+	BeforeStopHook,
+	ServerAlreadyRunningError,
+	ServerAlreadyStoppedError,
 } from '..';
 import express, { Request, Response } from 'express';
 
@@ -41,8 +45,8 @@ class FakeControllerWithMethods extends ExpressModule {
 
 class MockedMiddleware extends ExpressMiddleware {
 	public behaviour(
-		req: ExtendedRequest,
-		res: Response
+		_req: ExtendedRequest,
+		_res: Response
 	): MiddlewareReturnData<{}> {
 		return new MiddlewareReturnData('test-collection', { content: 'test' });
 	}
@@ -84,10 +88,38 @@ class ThrowingService extends ExpressService {
 }
 
 class MyErrorHandler implements ExpressErrorHandler {
-	handle(err: Error, req: Request, res: Response): void {
+	handle(err: Error, _req: Request, res: Response): void {
 		res.send({
 			error: err.message,
 		});
+	}
+}
+
+@ExpressService.IdentifiedBy('pre.post.hook')
+class PreAndPostHookService
+	extends ExpressService
+	implements AfterStopHook, BeforeStopHook
+{
+	public beforeStopHasRun: boolean = false;
+	public serverRunningBeforeStop: boolean = true;
+
+	public afterStopHasRun: boolean = false;
+	public serverRunningAfterStop: boolean = true;
+
+	async init(): Promise<boolean> {
+		this.app.addAfterStopHook(this);
+		this.app.addBeforeStopHook(this);
+		return true;
+	}
+
+	async beforeStop(): Promise<void> {
+		this.beforeStopHasRun = true;
+		this.serverRunningBeforeStop = this.app.isServerRunning();
+	}
+
+	async afterStop(): Promise<void> {
+		this.afterStopHasRun = true;
+		this.serverRunningAfterStop = this.app.isServerRunning();
 	}
 }
 
@@ -97,6 +129,8 @@ let mockInstance: MyMockApplication;
 let controllerWithMethodsInstance = new FakeControllerWithMethods();
 
 let myServiceInstance: MyService = new MyService();
+
+let postAndPreStopHookServiceInstance = new PreAndPostHookService();
 
 describe('ExpressApplication Test Suite', () => {
 	it('Should construct a new instance of a mocked application', () => {
@@ -134,10 +168,14 @@ describe('ExpressApplication Test Suite', () => {
 
 	it('Should add a service', () => {
 		expect(() =>
-			mockInstance.addServices([myServiceInstance])
+			mockInstance.addServices([
+				myServiceInstance,
+				postAndPreStopHookServiceInstance,
+			])
 		).not.toThrow();
 
 		expect(myServiceInstance.app).toEqual(mockInstance);
+		expect(postAndPreStopHookServiceInstance.app).toEqual(mockInstance);
 	});
 
 	it('Should return the service associated with myId', () => {
@@ -167,11 +205,35 @@ describe('ExpressApplication Test Suite', () => {
 		}
 	});
 
-	it('Should stop', async () => {
+	it('Should fail to start, since the server is already running', async () => {
+		try {
+			await mockInstance.start();
+			fail('It should not start successfully.');
+		} catch (e) {
+			expect(e).toBeInstanceOf(ServerAlreadyRunningError);
+		}
+	});
+
+	it('Should stop, run pre-stop hooks and post-stop hooks', async () => {
+		const isRunningBeforeStop = mockInstance.isServerRunning();
 		try {
 			await mockInstance.stop();
 		} catch (e) {
 			fail('Failed to stop');
+		}
+		const isRunningAfterStop = mockInstance.isServerRunning();
+
+		expect(isRunningBeforeStop).toBeTruthy();
+		expect(isRunningAfterStop).toBeTruthy();
+		expect(postAndPreStopHookServiceInstance.afterStopHasRun).toBeTruthy();
+		expect(postAndPreStopHookServiceInstance.beforeStopHasRun).toBeTruthy();
+	});
+
+	it('Should fail to stop as the server is already stopped', async () => {
+		try {
+			await mockInstance.stop();
+		} catch (e) {
+			expect(e).toBeInstanceOf(ServerAlreadyStoppedError);
 		}
 	});
 

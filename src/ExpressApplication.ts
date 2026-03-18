@@ -26,6 +26,24 @@ import {
 
 import { Server } from 'http';
 import { Constructable } from './Utils/Constructable';
+import { AfterStopHook, BeforeStopHook } from './Hooks';
+import {
+	AlreadyRegisteredControllerError,
+	AlreadyRegisteredServiceError,
+	EmptyControllerError,
+	FailedServiceInitializationError,
+	ServerAlreadyRunningError,
+	ServerAlreadyStoppedError,
+	ServerIsAlreadyStoppingError,
+	StartingServerWhileStoppingError,
+} from './Errors';
+
+/**
+ * @internal
+ */
+abstract class ExpressAppFriend {
+	public abstract set app(app: ExpressApplication);
+}
 
 /**
  * This type is just for expressivity to identify
@@ -83,6 +101,19 @@ export class ExpressApplication {
 	private server?: Server;
 
 	/**
+	 * Hooks that are run before stopping the server
+	 */
+	private preStopHooks: BeforeStopHook[];
+
+	/**
+	 * Hooks that are run after stopping the server
+	 */
+	private postStopHooks: AfterStopHook[];
+
+	private running: boolean;
+	private stopping: boolean;
+
+	/**
 	 * @param app is the express application that will handle the requests.
 	 * @param port is the port that the server will be bound to
 	 * @param _errorHandler is you custom implementation of the error handler that extends ExpressErrorHandler
@@ -95,6 +126,10 @@ export class ExpressApplication {
 		this.controllers = new Map();
 		this.port = port;
 		this.services = new Map();
+		this.preStopHooks = [];
+		this.postStopHooks = [];
+		this.running = false;
+		this.stopping = false;
 	}
 
 	/**
@@ -112,15 +147,11 @@ export class ExpressApplication {
 	 */
 	public addController<T extends ExpressModule>(controller: T) {
 		if (controller.router.stack.length == 0) {
-			throw Error(
-				'Controller should have at least one express call asssociated with it'
-			);
+			throw new EmptyControllerError(controller.className);
 		}
 
 		if (this.controllers.get(controller.className)) {
-			throw Error(
-				'Controller ' + controller.className + ' is already registered!'
-			);
+			throw new AlreadyRegisteredControllerError(controller.className);
 		}
 
 		let currInstance = this.controllers
@@ -142,7 +173,7 @@ export class ExpressApplication {
 			currInstance.baseUrl
 		);
 
-		currInstance.app = this;
+		(currInstance as ExpressAppFriend).app = this;
 	}
 
 	/**
@@ -167,16 +198,16 @@ export class ExpressApplication {
 	 */
 	public addService(service: ExpressService): void {
 		if (this.services.get(service.id!)) {
-			throw Error('Service ' + service.id! + ' is already registered!');
+			throw new AlreadyRegisteredServiceError(service.id!);
 		}
 
 		this.services.set(service.id!, service);
 
-		service.app = this;
+		(service as ExpressAppFriend).app = this;
 	}
 
 	/**
-	 * Adds a list of services to the current application
+	 * This method adds a list of services to the current application
 	 * Remember that the services must be uniquely identified
 	 * @param services The list of services to be added
 	 */
@@ -234,39 +265,114 @@ export class ExpressApplication {
 	}
 
 	/**
-	 * Starts the express application
+	 * This method starts the express application
 	 */
 	public async start() {
+		if (this.stopping) {
+			throw new StartingServerWhileStoppingError();
+		}
+
+		if (this.running) {
+			throw new ServerAlreadyRunningError();
+		}
+		this.running = true;
+
 		let boundFn = this.handleErrors.bind(this);
 		this.app.use(boundFn);
 		let res = await this.initServices();
 
 		if (!res) {
-			throw Error(
-				'Failed to initialize all the services, see logs for more info.'
-			);
+			this.running = false;
+			throw new FailedServiceInitializationError();
 		}
+
 		this.server = this.app.listen(this.port, () => {
 			console.log('Listening on', this.port);
 		});
 	}
 
 	/**
-	 * This function is used to stop the server on purpose
-	 * @returns void
-	 * @throws any generated error by Server.close
+	 * This method will create a promise that waits for the server to stop
 	 */
-	public async stop(): Promise<void> {
+	private async stopHelper(): Promise<void> {
 		return new Promise<void>((resolve, reject) => {
-			console.log('Stopping server...');
 			this.server!.close(async (err) => {
 				if (err) {
 					reject(err);
 				}
-				console.log('Server closed successfully');
 				resolve();
 			});
 		});
+	}
+
+	/**
+	 * This method is used to stop the server on purpose
+	 * @returns void
+	 * @throws any generated error by Server.close or by closing services
+	 */
+	public async stop(): Promise<void> {
+		if (!this.running) {
+			throw new ServerAlreadyStoppedError();
+		}
+
+		if (this.stopping) {
+			throw new ServerIsAlreadyStoppingError();
+		}
+
+		this.stopping = true;
+		console.log('Server needs to stop right now.');
+		console.log('Running Pre-Stop Hooks...');
+		await this.runPreStopHooks();
+		console.log('Done running pre stop hooks, now stopping server...');
+		await this.stopHelper();
+		console.log('Server stopped successfully.');
+		console.log('Running post stop hooks...');
+		await this.runPostStopHooks();
+		console.log('Done running Post-Stop Hooks');
+		this.stopping = false;
+		this.running = false;
+	}
+
+	/**
+	 * @internal
+	 * This method is used to run pre-stop hooks
+	 */
+	private async runPreStopHooks(): Promise<void> {
+		await Promise.all(this.preStopHooks.map((hook) => hook.beforeStop()));
+	}
+
+	/**
+	 * @internal
+	 * This method is used to run post-stop hooks
+	 */
+	private async runPostStopHooks(): Promise<void> {
+		await Promise.all(this.postStopHooks.map((hook) => hook.afterStop()));
+	}
+
+	/**
+	 * This method will register a hook that will trigger when
+	 * the server is stopped and the socket is closed.
+	 * @param hook the hook that will trigger
+	 */
+	public addAfterStopHook(hook: AfterStopHook): void {
+		this.postStopHooks.push(hook);
+	}
+
+	/**
+	 * This method will register a hook that will trigger when
+	 * the server is stopped and the socket not closed yet.
+	 * @param hook the hook that will trigger
+	 */
+	public addBeforeStopHook(hook: BeforeStopHook): void {
+		this.preStopHooks.push(hook);
+	}
+
+	/**
+	 * This method checks if the server is running
+	 * @returns tue if the server is listening, marked as running and is not stopping
+	 */
+	public isServerRunning(): boolean {
+		return this.server!.listening && this.running && !this.stopping;
 	}
 
 	/**
@@ -285,11 +391,35 @@ export class ExpressApplication {
 	 * @param serviceId the service identifier that is given with IdentifiedBy decorator
 	 * @returns the requested service or undefined if the service was not found
 	 */
-	public getService<T extends ExpressService>(service: Constructable<T>) {
+	public getService<T extends ExpressService>(service: Constructable<T>): T {
 		let serviceId: string = Reflect.getMetadata(
 			SERVICE_ID_METADATA,
 			service.prototype
 		);
 		return this.services.get(serviceId) as T;
+	}
+
+	/**
+	 * This method will register to a SIGINT event and will start
+	 * the graceful shutdown process when SIGINT is sent to the
+	 * current process
+	 */
+	public registerStopOnSigInt(): void {
+		process.on('SIGINT', () => {
+			console.log('Received SIGINT');
+			this.stop();
+		});
+	}
+
+	/**
+	 * This method will register to a SIGTERM event and will start
+	 * the graceful shutdown process when SIGTERM is sent to the
+	 * current process
+	 */
+	public registerStopOnSigTerm(): void {
+		process.on('SIGTERM', () => {
+			console.log('Received SIGTERM');
+			this.stop();
+		});
 	}
 }

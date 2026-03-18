@@ -100,8 +100,8 @@ class ASyncMiddleware extends AsyncExpressMiddleware<AuthData> {
 
 class GenericMiddleware extends ExpressMiddleware {
 	public behaviour(
-		req: ExtendedRequest,
-		res: Response
+		_req: ExtendedRequest,
+		_res: Response
 	): MiddlewareReturnData<{}> {
 		return new MiddlewareReturnData(undefined, { myContent: 'firstData' });
 	}
@@ -109,8 +109,8 @@ class GenericMiddleware extends ExpressMiddleware {
 
 class CascadedGenericMiddleware extends ExpressMiddleware {
 	public behaviour(
-		req: ExtendedRequest,
-		res: Response
+		_req: ExtendedRequest,
+		_res: Response
 	): MiddlewareReturnData<{}> {
 		return new MiddlewareReturnData(undefined, {
 			mySecondContent: 'secondData,app=' + (this.app != undefined),
@@ -138,7 +138,7 @@ class ThrowinMethodMessage {
 	auth: string = 'correct';
 
 	@AutoMap
-	middleware?: string;
+	middleware?: string | undefined;
 
 	constructor(middleware: string | undefined) {
 		this.middleware = middleware;
@@ -173,12 +173,17 @@ class WithBodyTestView {
 	field1: string;
 
 	@AutoMap
-	field2?: string;
+	field2?: string | undefined;
 
 	@AutoMap
-	param?: string;
+	param?: string | undefined;
 
-	constructor(gotBody: any, field1: string, field2?: string, param?: string) {
+	constructor(
+		gotBody: any,
+		field1: string,
+		field2?: string | undefined,
+		param?: string | undefined
+	) {
 		this.gotBody = gotBody;
 		this.field1 = field1;
 		this.field2 = field2;
@@ -273,13 +278,13 @@ class MyController extends ExpressModule {
 }
 
 class CustomErrorHandler implements ExpressErrorHandler {
-	handle(err: Error, req: Request, res: Response): void {
+	handle(err: Error, _req: Request, res: Response): void {
 		res.send({ message: err.message });
 	}
 }
 
 class CustomVerboseErrorHandler implements ExpressErrorHandler {
-	handle(err: Error, req: Request, res: Response): void {
+	handle(err: Error, _req: Request, res: Response): void {
 		console.log(err);
 		res.send({ message: err.message, error: err });
 	}
