@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { RestError } from '../ExpressErrorHandler/ExpressErrorHandler';
 import {
 	AutoMap,
 	SERIAL_MAP_METADATA_KEY,
@@ -224,7 +225,12 @@ export abstract class Serializer {
 	 * @returns the current context
 	 */
 	private getContext(): Object {
-		return this.contextStack[this.contextStack.length - 1];
+		let currentContext: object | undefined =
+			this.contextStack[this.contextStack.length - 1];
+		if (currentContext === undefined) {
+			throw new RestError('Current context is undefined', 500);
+		}
+		return currentContext;
 	}
 
 	/**
@@ -265,9 +271,9 @@ export abstract class Serializer {
 	 * @returns a string that should be appended before the serialization of the object
 	 */
 	public async preObject(
-		dataLabel: string,
-		data: SerialBite[],
-		metaInfo: SerializerMetaInfo | undefined
+		_dataLabel: string,
+		_data: SerialBite[],
+		_metaInfo: SerializerMetaInfo | undefined
 	): Promise<string> {
 		return '';
 	}
@@ -280,9 +286,9 @@ export abstract class Serializer {
 	 * @returns a string that should be appended after the serialization of the object
 	 */
 	public async postObject(
-		dataLabel: string,
-		data: SerialBite[],
-		metaInfo: SerializerMetaInfo | undefined
+		_dataLabel: string,
+		_data: SerialBite[],
+		_metaInfo: SerializerMetaInfo | undefined
 	): Promise<string> {
 		return '';
 	}

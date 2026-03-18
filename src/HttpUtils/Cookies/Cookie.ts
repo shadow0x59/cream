@@ -25,10 +25,10 @@ export enum SameSite {
 }
 
 export type RawCookieOptions = {
-	Expires?: Date;
-	Path?: string;
-	'Max-Age'?: number;
-	Domain?: string;
+	Expires?: Date | undefined;
+	Path?: string | undefined;
+	'Max-Age'?: number | undefined;
+	Domain?: string | undefined;
 	Secure: boolean;
 	HttpOnly: boolean;
 	SameSite: SameSite;

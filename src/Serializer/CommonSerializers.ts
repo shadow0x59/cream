@@ -90,7 +90,10 @@ export namespace CreamSerializers {
 		 * @param data the actual date to be serialized
 		 * @returns the serialized date as string, encapsulated by colons ("\<date\>").
 		 */
-		async serializeDate(dataLabel: string, data: Date): Promise<string> {
+		override async serializeDate(
+			dataLabel: string,
+			data: Date
+		): Promise<string> {
 			return '"' + (await super.serializeDate(dataLabel, data)) + '"';
 		}
 
@@ -215,12 +218,15 @@ export namespace CreamSerializers {
 			);
 		}
 
-		async serializeNull(dataLabel: string): Promise<string> {
+		override async serializeNull(dataLabel: string): Promise<string> {
 			if (dataLabel == '') return 'null';
 			return '<' + dataLabel + '/>';
 		}
 
-		async serializeDate(dataLabel: string, data: Date): Promise<string> {
+		override async serializeDate(
+			dataLabel: string,
+			data: Date
+		): Promise<string> {
 			if (dataLabel == '') return super.serializeDate(dataLabel, data);
 			else
 				return (

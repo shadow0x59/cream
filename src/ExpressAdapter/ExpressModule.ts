@@ -74,7 +74,7 @@ export class ExpressModule {
 		this.className = '';
 	}
 
-	public set app(v: ExpressApplication) {
+	private set app(v: ExpressApplication) {
 		this._app = v;
 		for (let middleware of this.middlewareList) {
 			middleware.app = v;
@@ -95,12 +95,12 @@ export class ExpressModule {
 		Error.captureStackTrace(error);
 		Error.stackTraceLimit = oldLimit;
 		let line = error.stack!.split('\n')[2];
-		let callerName = line.split('.')[1].split(' ')[0];
+		let callerName = line!.split('.')[1]!.split(' ')[0];
 
 		let transactionManager = Reflect.getMetadata(
 			TRANSACTION_MANAGER_METADATA_KEY,
 			this,
-			callerName
+			callerName!
 		) as TransactionManager;
 
 		if (transactionManager == undefined) {

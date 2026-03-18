@@ -43,12 +43,9 @@ export class TransactionManager {
 	 * @param method The method that will handle the transaction
 	 * @param thisArg The method owner (reserved for future usage)
 	 */
-	constructor(
-		private method: any,
-		private thisArg: any
-	) {
+	constructor() {
 		this.headers = new HeadersManager();
-		this.reset(thisArg);
+		this.reset();
 	}
 
 	/**
@@ -122,13 +119,12 @@ export class TransactionManager {
 	 * @param thisArg the owner of the method
 	 * @returns a self reference to the transaction manager
 	 */
-	public reset(thisArg: any): TransactionManager {
+	public reset(): TransactionManager {
 		this.headers.clear();
 		this.headers.set('Content-Type', new HeaderBuilder());
 		this.headers.set('Set-Cookie', new ResponseCookieManager());
 		this.ContentType('text/plain');
 		this.retcode = 200;
-		this.thisArg = thisArg;
 		return this;
 	}
 

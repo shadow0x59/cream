@@ -45,7 +45,7 @@ import supertest from 'supertest';
 @Serializable(CreamSerializers.JSON)
 class View {
 	@Transform((data: string) => {
-		data[0].toUpperCase();
+		data[0]!.toUpperCase();
 		return data;
 	})
 	@AutoMap
@@ -106,7 +106,7 @@ class MockController extends ExpressModule {
 }
 
 class CustomVerboseErrorHandler implements ExpressErrorHandler {
-	handle(err: Error, req: Request, res: Response): void {
+	handle(err: Error, _req: Request, res: Response): void {
 		console.log(err);
 		res.send({ message: err.message, error: err });
 	}

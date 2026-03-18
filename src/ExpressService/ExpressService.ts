@@ -43,7 +43,7 @@ export abstract class ExpressService {
 	/**
 	 * This is the setter to set the owning application
 	 */
-	public set app(v: ExpressApplication) {
+	private set app(v: ExpressApplication) {
 		this._app = v;
 	}
 

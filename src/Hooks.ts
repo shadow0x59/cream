@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Raul Radu
+ * Copyright 2026 Raul Radu
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,20 @@
  * limitations under the License.
  */
 
-import { HeaderBuilder } from '../Headers/HeaderBuilder';
-import { Cookie } from './Cookie';
+/**
+ * This interface defines a hook that is run after the listening node server
+ * stops listening for incoming requests. It is useful, for example, to
+ * close database connections.
+ */
+export interface AfterStopHook {
+	afterStop(): Promise<void>;
+}
 
 /**
- * This class is a header builder that handles Cookie instances instead of pure string
+ * This interface defines a hook that is run just before the listening node server
+ * stops listening for incoming requests. It is useful to check for incoming requests
+ * and start rejecting them.
  */
-export class ResponseCookieManager extends HeaderBuilder<Cookie> {
-	/**
-	 * This method overrides the base behavior of HeaderBuilder in order
-	 * to return an array of strings for the Set-Cookie header
-	 * @returns
-	 */
-	public override toConcreteHeader(): string | string[] {
-		return this.map((cookie: Cookie) => cookie.bakeCookie());
-	}
+export interface BeforeStopHook {
+	beforeStop(): Promise<void>;
 }
