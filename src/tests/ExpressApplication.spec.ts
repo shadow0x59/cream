@@ -224,7 +224,7 @@ describe('ExpressApplication Test Suite', () => {
 		const isRunningAfterStop = mockInstance.isServerRunning();
 
 		expect(isRunningBeforeStop).toBeTruthy();
-		expect(isRunningAfterStop).toBeTruthy();
+		expect(isRunningAfterStop).toBeFalsy();
 		expect(postAndPreStopHookServiceInstance.afterStopHasRun).toBeTruthy();
 		expect(postAndPreStopHookServiceInstance.beforeStopHasRun).toBeTruthy();
 	});
