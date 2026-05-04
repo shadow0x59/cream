@@ -9,19 +9,30 @@
 
 # Cream - A Library For Semi-Declarative REST API Creation
 
-Cream stands for Concise REST API Maker and it is a ExpressJS extension mainly targeting TypeScript builds.
-It wasn't tested on plain JS.
+Cream is a lightweight, strictly typed framework for building scalable Node.js applications with a focus on Clean Architecture and little Boilerplate, with a first-class support for TypeScript.
 
-### Contents
+## Future-proof Architecture
+
+Cream is being designed to be engine-agnostic. Our goal is to allow developers to swap the underlying HTTP engine (Express/Fastify) or even use it for non-HTTP protocols without changing the business logic.
+
+## Contribution & Feedback 🚀
+
+Cream is in active development. If you find a bug or have a feature request, please open an Issue or a Pull Request. Every star on GitHub helps!  
+If you want to support the development of Cream you can do it by ☕ [Buying Me A Coffee](https://www.buymeacoffee.com/shadow0x59) ☕
+
+## Contents
 
 -   [Installation](#installation)
+-   [Quick Setup]()
 -   [Usage](#usage)
-    -   [Index](#index)
     -   [API Documentation](#documentation)
     -   [First Steps](#first-steps)
     -   [Handling Complex Objects](#handling-complex-objects)
         -   [Handling data coming from the client](#handling-data-coming-from-the-client)
         -   [Returning complex objects](#returning-complex-objects)
+    -   [Headers](#headers)
+    -   [Cookies](#cookies)
+    -   [Services](#services)
     -   [Continuing](#continuing)
 -   [Comparison with Express](#comparing-it-with-express)
 -   [Contributors](#contributors)
@@ -29,36 +40,91 @@ It wasn't tested on plain JS.
 
 # Installation
 
-If express is not installed:
+First you have to install typescript, cream and express:
 
 ```bash
-npm install express @types/express @creamapi/cream
+npm install --save-dev typescript @types/express
+npm install express @creamapi/cream
 ```
 
-If you've already installed exprees:
+Then, to setup a TS project run:
 
 ```bash
-npm install @creamapi/cream
+npx tsc --init
 ```
+
+which will initialize the TypeScript project for you by creating a file called _tsconfig.json_.
+
+Since Cream uses **experimental decorators** to run we need to enable them in the _tsconfig.json_ by uncommenting or adding this line in the config:
+
+File: _tsconfig.json_
+
+```json
+// [...]
+"experimentalDecorators": true, /* Enable experimental support for legacy experimental decorators. */
+// [...]
+```
+
+> Be sure that `esModuleInterop` is set to `true` and that `verbatimModuleSyntax` is set to `false`, the first is required to import express and the latter to import cream components in a node environment.
+
+## Quick Start
+
+Now that you have a environment that can run Cream, here is the Hello, World! for Cream.
+
+File: _index.ts_
+
+```ts
+import {
+	Get,
+	ExpressController,
+	ExpressModule,
+	ExpressApplication,
+} from '@creamapi/cream';
+import express, { Express } from 'express';
+
+const PORT: number = 4040;
+
+@ExpressController('/hello')
+class HelloWorldController extends ExpressModule {
+	@Get('/world')
+	public helloWorld(): string {
+		return 'Hello, World!';
+	}
+}
+
+const expressApp: Express = express();
+expressApp.use(express.json());
+const app: ExpressApplication = new ExpressApplication(expressApp, PORT);
+/* Register the controller to the application */
+app.addController(new HelloWorldController());
+
+/* This will allow the server to stop on sigint and sigterm,
+ * see more in the section "Gracefully Stopping The Server".
+ */
+app.registerStopOnSigInt();
+app.registerStopOnSigTerm();
+
+app.start();
+```
+
+And that's all! Now we need to transpile the code in JavaScript and run it with Node:
+
+```bash
+npx tsc
+node index.js
+```
+
+The application is available at http://localhost:4040 and we can print `Hello, World!` in the browser by visiting http://localhost:4040/hello/world:
+
+![alt text](docs/image.png)
 
 # Usage
 
-> Note: These examples use TypeScript, in order to follow them please setup a TS project.
-> Also you need to have experimental decorators on in your tsconfig.
+> Note: These examples use TypeScript, in order to follow them please setup a TS project.  
+> Also you need to have experimental decorators on in your tsconfig.  
+> See Installation for further information.
 
 To create your own API with Cream it is easy! You just need to setup a few things then you can play with it with ease.
-
-## Index
-
--   [API Documentation](#documentation)
--   [First Steps](#first-steps)
--   [Handling Complex Objects](#handling-complex-objects)
-    -   [Handling data coming from the client](#handling-data-coming-from-the-client)
-    -   [Returning complex objects](#returning-complex-objects)
--   [Headers](#headers)
--   [Cookies](#cookies)
--   [Services](#services)
--   [Continuing](#continuing)
 
 ## Documentation
 
