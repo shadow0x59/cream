@@ -4,8 +4,9 @@
 ![GitLab Issues](https://img.shields.io/gitlab/issues/open/worklog1%2Fcream)
 ![GitLab Contributors](https://img.shields.io/gitlab/contributors/worklog1%2Fcream)
 ![NPM Version](https://img.shields.io/npm/v/%40creamapi%2Fcream)
+![Gitlab Code Coverage](https://img.shields.io/gitlab/pipeline-coverage/worklog1%2Fcream)
 
-<a href="https://www.buymeacoffee.com/shadow0x59" target="_blank"><img heigth="60" src="https://cdn.buymeacoffee.com/buttons/v2/default-violet.png" alt="Buy Me A Coffee" style="width: 115px !important; height: 30px !important;" ></a>
+<!--a href="https://www.buymeacoffee.com/shadow0x59" target="_blank"><img heigth="60" src="https://cdn.buymeacoffee.com/buttons/v2/default-violet.png" alt="Buy Me A Coffee" style="width: 115px !important; height: 30px !important;" ></a-->
 
 # Cream - A Library For Semi-Declarative REST API Creation
 
@@ -104,7 +105,10 @@ app.addController(new HelloWorldController());
 app.registerStopOnSigInt();
 app.registerStopOnSigTerm();
 
-app.start();
+app.start().catch((err: Error) => {
+	console.log('Failed to start application');
+	exit(1);
+});
 ```
 
 And that's all! Now we need to transpile the code in JavaScript and run it with Node:
@@ -154,7 +158,10 @@ class MyCustomApplication extends ExpressApplication {
 }
 
 let myCustApp = new MyCustomApplication();
-myCustApp.start();
+myCustApp.start().catch((err: Error) => {
+	console.log('Failed to start application');
+	exit(1);
+});
 ```
 
 If we try to run it we will see
@@ -204,7 +211,10 @@ class MyCustomApplication extends ExpressApplication {
 }
 
 let myCustApp = new MyCustomApplication();
-myCustApp.start();
+myCustApp.start().catch((err: Error) => {
+	console.log('Failed to start application');
+	exit(1);
+});
 ```
 
 Now if we go to https://localhost:4040/hello-world we will see
@@ -917,7 +927,10 @@ chatApp.addServices([
 	new ChatService()
 ]);
 
-chatApp.start();
+chatApp.start().catch((err: Error) => {
+	console.log('Failed to start application');
+	exit(1);
+});
 ```
 
 This will open an API listening to port 4040 (http://localhost:4040).
@@ -960,7 +973,10 @@ chatApp.addServices([
 
 chatApp.registerStopOnSigInt();
 chatApp.registerStopOnSigTerm();
-chatApp.start();
+chatApp.start().catch((err: Error) => {
+	console.log('Failed to start application');
+	exit(1);
+});
 ```
 
 Both `ExpressApplication.registerStopOnSigInt` and `ExpressApplication.registerStopOnSigTerm` will make the current process listen for `SIGINT` and `SIGTERM` and then call `ExpressApplication.stop`.
@@ -1113,7 +1129,10 @@ class MyApp extends ExpressApplication {
 
 let myInstance = new MyApp();
 myInstance.addController(new MyController());
-myInstance.start();
+myInstance.start().catch((err: Error) => {
+	console.log('Failed to start application');
+	exit(1);
+});
 ```
 
 Albeit looking complicated for this simple example, in case of larger projects the benefit is clearly visible. The classes define the
