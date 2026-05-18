@@ -57,6 +57,10 @@ unit-test-job: # This job runs in the test stage.
         expire_in: 30 days
         paths:
             - coverage/
+        reports:
+            coverage_report:
+                coverage_format: cobertura
+                path: coverage/cobertura-coverage.xml
 
 lint-test-job: # This job also runs in the test stage.
     stage: test # It can run at the same time as unit-test-job (in parallel).
