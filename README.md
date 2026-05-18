@@ -4,7 +4,7 @@
 ![GitLab Issues](https://img.shields.io/gitlab/issues/open/worklog1%2Fcream)
 ![GitLab Contributors](https://img.shields.io/gitlab/contributors/worklog1%2Fcream)
 ![NPM Version](https://img.shields.io/npm/v/%40creamapi%2Fcream)
-![Gitlab Code Coverage](https://img.shields.io/gitlab/pipeline-coverage/worklog1%2Fcream)
+![Gitlab Code Coverage](https://img.shields.io/gitlab/pipeline-coverage/worklog1%2Fcream?job_name=unit-test-job&branch=master)
 
 <!--a href="https://www.buymeacoffee.com/shadow0x59" target="_blank"><img heigth="60" src="https://cdn.buymeacoffee.com/buttons/v2/default-violet.png" alt="Buy Me A Coffee" style="width: 115px !important; height: 30px !important;" ></a-->
 
