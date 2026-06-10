@@ -3,5 +3,11 @@
 	"transform": {
 		"^.+\\.tsx?$": "ts-jest"
 	},
-	"coverageReporters": ["json", "lcov", "text", "clover", "cobertura"]
+	"coverageReporters": [
+		"json",
+		"lcov",
+		"text",
+		"clover",
+		"cobertura"
+	]
 }
