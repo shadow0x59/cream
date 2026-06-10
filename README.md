@@ -526,7 +526,70 @@ A experienced developer will notice that `Expires` is missing, this is due to th
 
 > Cream will set both to provide compatibility with older browsers whilst modern browsers will just ignore `Expires` and will use `MaxAge` by default.
 
-To set `MaxAge` and to provide correct timings the user cannot set delta time immediately, like in the example the user must use a lambda function that takes a CookieTimeFrame as an argument, a helper class that is used to provide a starting time and an expiry in delta.
+To set `MaxAge` and to provide correct timings the user cannot set delta time immediately, like in the example the user must use a lambda function that takes a `CookieTimeFrame` as an argument, a helper class that is used to provide a starting time and an expiry in delta.
+
+### Cookie Retrieval via @Header decorator
+
+> This feature is available only for Cream 1.4.0+
+
+Cookies are set in the headers, specifically in the `Cookie` header in the format (with a slight abuse of notation) `[<cookie-name>=<cookie-value>";"]+` (for more detailed info see: [https://httpwg.org/specs/rfc6265.html](https://httpwg.org/specs/rfc6265.html)) so a first and straightforward access to cookies is done via the `@Header` decorator, but this will populate the parameter with a string that has the format I've just introduced.
+
+### Cookie Retrieval via @ResponseCookie decorator
+
+> This feature is available only for Cream 1.7.0+
+
+Alternatively, to not handle the hustle and the repetivie action of parsing the cookie string Cream offers the `@ResponseCookie` header.
+
+> _note that Cream does not exploit the cookie-parser middleware in order to not depend on another external plugin and package_
+
+The syntax is similar to the one used for `@Body`,`@BodyField`, `@UrlParameter` and `@Header`.  
+If the cookie header is not present or the cookie itself is not present in the cookie array then the decorated parameter will be set to `undefined`.
+
+Now let's see a simple example:
+
+```ts
+import {
+	Get,
+	ResponseCookie,
+	ExpressController,
+	ExpressModule,
+	CreamSerializers,
+	ContentType,
+	HttpReturnCode,
+	Serializable,
+	DynamicCookie,
+} from '@creamapi/cream';
+
+@ContentType('application/json')
+@HttpReturnCode(200)
+@Serializable(CreamSerializers.JSON)
+class CookieView {
+	@DynamicCookie('yummy-cookie', {
+		MaxAge: (tf: CookieTimeFrame) => tf.fromNow().willEndIn(1200 * 1000),
+	})
+	@AutoMap
+	public yummyCookie: string; // this will be both part of the body and will be set in the cookie
+
+	constructor(yummyCookie: string) {
+		this.yummyCookie = yummyCookie;
+	}
+}
+
+@ExpressController('/')
+export class ExampleController extends ExpressModule {
+	@Get('/test-cookie')
+	public async setCookie(): Promise<CookieView> {
+		return new CookieView('yes');
+	}
+
+	@Get('/')
+	public async useCookie(
+		@ResponseCookie('yummy-cookie') isCookieYummy: string | undefined
+	): Promise<boolean> {
+		return isCookieYummy === 'yes';
+	}
+}
+```
 
 ## Services
 
@@ -694,7 +757,7 @@ export class UserController extends ExpressModule {
 }
 ```
 
-The `app` class member is automatically injected to the controller and and refers to the `ExpressApplication` that this controller is registered to (we will see this part later).  
+The `app` class member is automatically injected to the controller and and refers to the `ExpressApplication` that this controller is registered to (we will see this part later).
 In general this is how `services` are used, they provide a service that other `controllers`, `services` and `middlewares` can use.
 
 ### Chatting system
@@ -989,7 +1052,7 @@ The `stop` method will then act in 3 steps:
 
 ### Before and After Stop Hooks
 
-The customization comes from the fact that the hooks are user defined (in fact Cream does not define any hook) and to register the hook it is as simple as calling `ExpressApplication.addAfterStopHook` and `ExpressApplication.addBeforeStopHook`.  
+The customization comes from the fact that the hooks are user defined (in fact Cream does not define any hook) and to register the hook it is as simple as calling `ExpressApplication.addAfterStopHook` and `ExpressApplication.addBeforeStopHook`.
 The hook to be added must implement respectively `AfterStopHook` and `BeforeStopHook` interfaces (so yes, it has to be a class).
 
 > Note that Cream will not provide any reference to the ExpressApplication to the hooks, it has to be done manually by the user or the hook can be one of `ExpressService`, a _**registered**_ `ExpressController` or a `ExpressMiddleware`.
@@ -1170,6 +1233,10 @@ Special thanks to **Domenico Popolizio** for tolerating me with this project and
 
 # Donations
 
-You want to keep this project up, but don't know how to collaborate?  
-No worries! If you can and if you wish you can tip me a small amount :)  
+You want to keep this project up, but don't know how to collaborate?
+No worries! If you can and if you wish you can tip me a small amount :)
 Here on ☕ [Buy Me A Coffee](https://www.buymeacoffee.com/shadow0x59) ☕
+
+```
+
+```
