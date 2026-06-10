@@ -38,12 +38,13 @@ import {
 	HTTP_DYNAMIC_COOKIES,
 } from '../HttpUtils/Cookies/DynamicCookie';
 
-export const BODY_METADATA_KEY = Symbol('express:bodyAssoc');
-export const PARAMS_METADATA_KEY = Symbol('express:paramAssoc');
-export const HEADERS_METADATA_KEY = Symbol('express:headersAssoc');
-export const MIDDLEWARE_METADATA_KEY = Symbol('express:middlewareAssoc');
+export const BODY_METADATA_KEY = Symbol('cream:bodyAssoc');
+export const PARAMS_METADATA_KEY = Symbol('cream:paramAssoc');
+export const COOKIES_METADATA_KEY = Symbol('cream:cookieAssoc');
+export const HEADERS_METADATA_KEY = Symbol('cream:headersAssoc');
+export const MIDDLEWARE_METADATA_KEY = Symbol('cream:middlewareAssoc');
 export const TRANSACTION_MANAGER_METADATA_KEY = Symbol(
-	'express:transactionManager'
+	'cream:transactionManager'
 );
 
 /**
@@ -117,6 +118,12 @@ export function ExpressCall<T extends ExpressModule>(
 					propertyName
 				);
 
+				let cookiesMappings: ParameterProps = Reflect.getOwnMetadata(
+					COOKIES_METADATA_KEY,
+					target,
+					propertyName
+				);
+
 				let headerMappings: ParameterProps = Reflect.getOwnMetadata(
 					HEADERS_METADATA_KEY,
 					target,
@@ -134,6 +141,7 @@ export function ExpressCall<T extends ExpressModule>(
 					.addBodyAssociations(bodyAssocs)
 					.addParametersAssociations(paramAssoc)
 					.addHeaderAssociations(headerMappings)
+					.addCookiesAssociations(cookiesMappings)
 					.addMiddlewareAssociations(middlewareAssoc);
 
 				try {
@@ -567,6 +575,38 @@ export function Header(headerName: string) {
 		Reflect.defineMetadata(
 			HEADERS_METADATA_KEY,
 			existingHeaderMappings,
+			target,
+			propertyKey
+		);
+	};
+}
+
+/**
+ * This parameter decorator will decorate a method parameter by associating it with a Request Cookie found in the Cookie header.
+ * @remarks
+ *
+ * - If there is no cookie header all parameters will be undefined
+ * - If there is a malformed cookie the result is **undefined behavior**
+ * - If there is a requested cookie that is not present in the response the parameter will be undefined
+ *
+ * @param cookieName the cookie name
+ * @returns the decorator function
+ */
+export function ResponseCookie(cookieName: string) {
+	return function (
+		target: Object,
+		propertyKey: string | symbol,
+		parameterIndex: number
+	) {
+		let existingCookieMappings: ParameterProps =
+			Reflect.getOwnMetadata(COOKIES_METADATA_KEY, target, propertyKey) ||
+			[];
+		existingCookieMappings.push(
+			new ParameterProp(parameterIndex, cookieName)
+		);
+		Reflect.defineMetadata(
+			COOKIES_METADATA_KEY,
+			existingCookieMappings,
 			target,
 			propertyKey
 		);
