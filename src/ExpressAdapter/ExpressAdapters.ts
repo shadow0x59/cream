@@ -592,7 +592,7 @@ export function Header(headerName: string) {
  * @param cookieName the cookie name
  * @returns the decorator function
  */
-export function ResponseCookie(cookieName: string) {
+export function RequestCookie(cookieName: string) {
 	return function (
 		target: Object,
 		propertyKey: string | symbol,

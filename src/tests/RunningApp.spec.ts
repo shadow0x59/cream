@@ -42,7 +42,7 @@ import {
 	TransactionManager,
 	Cookie,
 	SameSite,
-	ResponseCookie,
+	RequestCookie,
 } from '..';
 
 import supertest from 'supertest';
@@ -296,7 +296,7 @@ class MyController extends ExpressModule {
 
 	@Get('/get-cookie')
 	public getCookie(
-		@ResponseCookie('test-cookie') testCookie: string
+		@RequestCookie('test-cookie') testCookie: string
 	): boolean {
 		return testCookie === 'test-cookie-value';
 	}

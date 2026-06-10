@@ -38,7 +38,7 @@ import {
 	MiddlewareData,
 	RestError,
 	UseMiddlewaresForController,
-	ResponseCookie,
+	RequestCookie,
 } from '..';
 
 import {
@@ -152,7 +152,7 @@ class MockController extends ExpressModule {
 		@Body() data: string,
 		@UrlParameter('field1') field1: string,
 		@Header('header1') header1: string,
-		@ResponseCookie('cookie1') cookie1: string,
+		@RequestCookie('cookie1') cookie1: string,
 		@MiddlewareData('myMockedMiddleware', 'myMiddlewareData')
 		middlewareData: string | undefined = undefined
 	) {

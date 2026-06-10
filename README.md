@@ -534,11 +534,11 @@ To set `MaxAge` and to provide correct timings the user cannot set delta time im
 
 Cookies are set in the headers, specifically in the `Cookie` header in the format (with a slight abuse of notation) `[<cookie-name>=<cookie-value>";"]+` (for more detailed info see: [https://httpwg.org/specs/rfc6265.html](https://httpwg.org/specs/rfc6265.html)) so a first and straightforward access to cookies is done via the `@Header` decorator, but this will populate the parameter with a string that has the format I've just introduced.
 
-### Cookie Retrieval via @ResponseCookie decorator
+### Cookie Retrieval via @RequestCookie decorator
 
 > This feature is available only for Cream 1.7.0+
 
-Alternatively, to not handle the hustle and the repetivie action of parsing the cookie string Cream offers the `@ResponseCookie` header.
+Alternatively, to not handle the hustle and the repetivie action of parsing the cookie string Cream offers the `@RequestCookie` header.
 
 > _note that Cream does not exploit the cookie-parser middleware in order to not depend on another external plugin and package_
 
@@ -550,7 +550,7 @@ Now let's see a simple example:
 ```ts
 import {
 	Get,
-	ResponseCookie,
+	RequestCookie,
 	ExpressController,
 	ExpressModule,
 	CreamSerializers,
@@ -584,7 +584,7 @@ export class ExampleController extends ExpressModule {
 
 	@Get('/')
 	public async useCookie(
-		@ResponseCookie('yummy-cookie') isCookieYummy: string | undefined
+		@RequestCookie('yummy-cookie') isCookieYummy: string | undefined
 	): Promise<boolean> {
 		return isCookieYummy === 'yes';
 	}
