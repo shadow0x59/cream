@@ -25,6 +25,7 @@ export {
 	Body,
 	UrlParameter,
 	Header,
+	RequestCookie,
 } from './ExpressAdapter/ExpressAdapters';
 export {
 	RestError,

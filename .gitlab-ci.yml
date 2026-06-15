@@ -49,7 +49,7 @@ build: # This job runs in the build stage, which runs first.
 unit-test-job: # This job runs in the test stage.
     stage: test # It only starts when the job in the build stage completes successfully.
     script:
-        - npm test -- --coverage
+        - npm test -- --coverage --ci --reporters=default --reporters=jest-junit
     coverage: /All files[^|]*\|[^|]*\s+([\d\.]+)/
     artifacts:
         untracked: false
@@ -62,6 +62,8 @@ unit-test-job: # This job runs in the test stage.
             coverage_report:
                 coverage_format: cobertura
                 path: coverage/cobertura-coverage.xml
+            junit:
+                - junit.xml
 
 lint-test-job: # This job also runs in the test stage.
     stage: test # It can run at the same time as unit-test-job (in parallel).

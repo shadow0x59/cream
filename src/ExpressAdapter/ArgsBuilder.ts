@@ -90,6 +90,51 @@ export class ArgsBuilder {
 	}
 
 	/**
+	 * Maps the arguments that are cookies related to cookie data
+	 *
+	 * @remarks
+	 * - If there is no cookie header all parameters will be undefined
+	 * - If there is a malformed cookie the result is **undefined behavior**
+	 * - If there is a requested cookie that is not present in the response the parameter will be undefined
+	 *
+	 * @param cookiesAssociations The association information that relates the cookies with the correct parameter index
+	 * @returns a self reference to the ArgsBuilder
+	 */
+	public addCookiesAssociations(
+		cookiesAssociations: ParameterProps
+	): ArgsBuilder {
+		if (cookiesAssociations == undefined) return this;
+
+		let cookieString: string | undefined = this.req.header('Cookie');
+
+		if (cookieString === undefined) {
+			for (let mapping of cookiesAssociations) {
+				this.args[mapping.index] = undefined;
+			}
+			return this;
+		}
+		let trimmedString: string = cookieString.replaceAll(/\s/g, '');
+
+		let cookieMap: Map<string, string | undefined> = new Map<
+			string,
+			string | undefined
+		>(
+			trimmedString
+				.split(';')
+				.map((item: string): [string, string | undefined] => [
+					item.split('=')[0]!,
+					item.split('=')[1],
+				])
+		);
+
+		for (let mapping of cookiesAssociations) {
+			this.args[mapping.index] = cookieMap.get(mapping.name);
+		}
+
+		return this;
+	}
+
+	/**
 	 * Maps the arguments that are middleware related to middleware data
 	 * @param headerAssociations The association information that relates the middleware collections (and collection data) with the correct parameter index
 	 * @returns a self reference to the ArgsBuilder

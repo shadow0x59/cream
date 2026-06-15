@@ -40,6 +40,9 @@ import {
 	Post,
 	Meta,
 	TransactionManager,
+	Cookie,
+	SameSite,
+	RequestCookie,
 } from '..';
 
 import supertest from 'supertest';
@@ -275,6 +278,28 @@ class MyController extends ExpressModule {
 
 		return 'test';
 	}
+
+	@Get('/set-cookie')
+	public setCookie(): string {
+		let tm = this.prepareTransaction();
+		tm.getResponseCookiesManager().push(
+			new Cookie('test-cookie', 'test-cookie-value', {
+				HttpOnly: false,
+				SameSite: SameSite.None,
+				Secure: false,
+				Partitioned: false,
+			})
+		);
+
+		return 'Ok';
+	}
+
+	@Get('/get-cookie')
+	public getCookie(
+		@RequestCookie('test-cookie') testCookie: string
+	): boolean {
+		return testCookie === 'test-cookie-value';
+	}
 }
 
 class CustomErrorHandler implements ExpressErrorHandler {
@@ -447,6 +472,42 @@ describe('Testing parameter binding and middlewares running', () => {
 		expect(res.status).toBe(200);
 		expect(res.header['content-type']).toContain('text/plain');
 		expect(res.text).toEqual('test');
+	});
+
+	it('Should set a cookie to the client and then retreive it later', async () => {
+		let superTestInstance = supertest.agent(appInstance.getExpressApp());
+		let res = await superTestInstance.get('/my-route/set-cookie');
+		expect(res.status).toBe(200);
+		expect(res.header['content-type']).toContain('text/plain');
+		expect(res.text).toEqual('Ok');
+		expect(res.header['set-cookie']).toHaveLength(1);
+		expect(res.header['set-cookie']![0]).toContain('test-cookie');
+		expect(res.header['set-cookie']![0]).toContain('test-cookie-value');
+
+		let cookieString = res
+			.get('Set-Cookie')!
+			.reduce(
+				(cookieString, item) =>
+					(cookieString += item.split(';')[0] + ';'),
+				''
+			);
+		cookieString = cookieString.slice(0, -1);
+
+		res = await superTestInstance
+			.get('/my-route/get-cookie')
+			.set('Cookie', cookieString);
+		expect(res.status).toBe(200);
+		expect(res.header['content-type']).toContain('text/plain');
+		expect(res.text).toEqual('true');
+	});
+
+	it('Should have undefined in cookie value since cookie header is not set', async () => {
+		let res = await supertest(appInstance.getExpressApp()).get(
+			'/my-route/get-cookie'
+		);
+		expect(res.status).toBe(200);
+		expect(res.header['content-type']).toContain('text/plain');
+		expect(res.text).toEqual('false');
 	});
 
 	it('Should stop', async () => {

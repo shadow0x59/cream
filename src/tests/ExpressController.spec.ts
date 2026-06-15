@@ -38,10 +38,13 @@ import {
 	MiddlewareData,
 	RestError,
 	UseMiddlewaresForController,
+	RequestCookie,
 } from '..';
 
 import {
 	BODY_METADATA_KEY,
+	COOKIES_METADATA_KEY,
+	HEADERS_METADATA_KEY,
 	MIDDLEWARE_METADATA_KEY,
 	PARAMS_METADATA_KEY,
 } from '../ExpressAdapter/ExpressAdapters';
@@ -85,15 +88,25 @@ class TestCall3View {
 	field1: string;
 
 	@AutoMap
+	header1: string;
+
+	@AutoMap
+	cookie1: string;
+
+	@AutoMap
 	middlewareData?: string | undefined;
 
 	constructor(
 		body: string,
 		field1: string,
+		header1: string,
+		cookie1: string,
 		middlewareData?: string | undefined
 	) {
 		this.body = body;
 		this.field1 = field1;
+		this.header1 = header1;
+		this.cookie1 = cookie1;
 		this.middlewareData = middlewareData;
 	}
 }
@@ -138,10 +151,18 @@ class MockController extends ExpressModule {
 	public testCall3(
 		@Body() data: string,
 		@UrlParameter('field1') field1: string,
+		@Header('header1') header1: string,
+		@RequestCookie('cookie1') cookie1: string,
 		@MiddlewareData('myMockedMiddleware', 'myMiddlewareData')
 		middlewareData: string | undefined = undefined
 	) {
-		return new TestCall3View(data, field1, middlewareData);
+		return new TestCall3View(
+			data,
+			field1,
+			header1,
+			cookie1,
+			middlewareData
+		);
 	}
 
 	@Get('/test-3')
@@ -225,9 +246,16 @@ describe('ExpressController & ExpressMiddleware Test Suite', () => {
 	});
 
 	it('Should get parameters by normal calling', () => {
-		let res = mockInstance.testCall3('passed-data', 'fieldData');
+		let res = mockInstance.testCall3(
+			'passed-data',
+			'fieldData',
+			'headerData',
+			'cookieData'
+		);
 		expect(res.body).toBe('passed-data');
 		expect(res.field1).toBe('fieldData');
+		expect(res.header1).toBe('headerData');
+		expect(res.cookie1).toBe('cookieData');
 	});
 
 	it('Should fail calling prepareTransaction in a method that is not an endpoint', () => {
@@ -236,7 +264,7 @@ describe('ExpressController & ExpressMiddleware Test Suite', () => {
 		).toThrow();
 	});
 
-	it('Should have 3 parameters to be injected', async () => {
+	it('Should have body, url param, header, cookie and middleware data parameters to be injected', async () => {
 		let route = routes.find(
 			(route: Route) => route.methodName == 'testCall3'
 		);
@@ -258,6 +286,18 @@ describe('ExpressController & ExpressMiddleware Test Suite', () => {
 			route!.methodName
 		);
 
+		let headerParams: ParameterProp[] = Reflect.getMetadata(
+			HEADERS_METADATA_KEY,
+			MockController.prototype,
+			route!.methodName
+		);
+
+		let cookieParams: ParameterProp[] = Reflect.getMetadata(
+			COOKIES_METADATA_KEY,
+			MockController.prototype,
+			route!.methodName
+		);
+
 		let middlewareParams: MiddlewareParameterProp[] = Reflect.getMetadata(
 			MIDDLEWARE_METADATA_KEY,
 			MockController.prototype,
@@ -269,6 +309,8 @@ describe('ExpressController & ExpressMiddleware Test Suite', () => {
 		expect(middlewareParams).toHaveLength(1);
 		expect(bodyFields[0]!.name).toBe(':body');
 		expect(urlParams[0]!.name).toBe('field1');
+		expect(headerParams[0]!.name).toBe('header1');
+		expect(cookieParams[0]!.name).toBe('cookie1');
 		expect(middlewareParams[0]!.collection).toBe('myMockedMiddleware');
 		expect(middlewareParams[0]!.name).toBe('myMiddlewareData');
 	});
