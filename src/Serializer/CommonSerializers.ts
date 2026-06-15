@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Raul Radu
+ * Copyright 2024,2026 Raul Radu
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
