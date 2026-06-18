@@ -43,6 +43,7 @@ import {
 	Cookie,
 	SameSite,
 	RequestCookie,
+	DynamicCookie,
 } from '..';
 
 import supertest from 'supertest';
@@ -194,6 +195,14 @@ class WithBodyTestView {
 	}
 }
 
+@HttpReturnCode(200)
+@ContentType('application/json')
+@Serializable(CreamSerializers.JSON)
+class DynamicCookieTest {
+	@DynamicCookie('cookie-test', { HttpOnly: true, SameSite: SameSite.Lax })
+	public cookie: string = 'test';
+}
+
 @ExpressController('/my-route')
 class MyController extends ExpressModule {
 	@UseMiddleware(new SyncMiddleware())
@@ -277,6 +286,11 @@ class MyController extends ExpressModule {
 		tm.ReturnCode(undefined);
 
 		return 'test';
+	}
+
+	@Get('/dynamic-cookie')
+	public setDynamicCookie(): DynamicCookieTest {
+		return new DynamicCookieTest();
 	}
 
 	@Get('/set-cookie')
@@ -472,6 +486,17 @@ describe('Testing parameter binding and middlewares running', () => {
 		expect(res.status).toBe(200);
 		expect(res.header['content-type']).toContain('text/plain');
 		expect(res.text).toEqual('test');
+	});
+
+	it('Should set a dynamic cookie', async () => {
+		let superTestInstance = supertest.agent(appInstance.getExpressApp());
+		let res = await superTestInstance.get('/my-route/dynamic-cookie');
+		expect(res.status).toBe(200);
+		expect(res.header['content-type']).toContain('application/json');
+		expect(res.body).toStrictEqual({});
+		expect(res.header['set-cookie']).toHaveLength(1);
+		expect(res.header['set-cookie']![0]).toContain('cookie-test');
+		expect(res.header['set-cookie']![0]).toContain('test');
 	});
 
 	it('Should set a cookie to the client and then retreive it later', async () => {
