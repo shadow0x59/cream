@@ -164,8 +164,8 @@ export function ExpressCall<T extends ExpressModule>(
 						let dynamicCookies: DynamicCookieMapping[] =
 							Reflect.getMetadata(HTTP_DYNAMIC_COOKIES, result) ||
 							[];
-						cookiesManager.concat(
-							dynamicCookies.map(
+						cookiesManager.push(
+							...dynamicCookies.map(
 								(cookieMap: DynamicCookieMapping) =>
 									Cookie.fromCookieOpts(
 										cookieMap.cookieName,
